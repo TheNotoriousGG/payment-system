@@ -24,13 +24,14 @@ import reactor.core.publisher.Mono;
 public class AuthApiImpl implements AuthApi {
 
     private final UserService userService;
-    private final Validator validator;
-    private final KeycloakService keycloakService;
 
 
     @Override
     public Mono<ResponseEntity<TokenResponse>> authLoginPost(Mono<UserLoginRequest> userLoginRequest, ServerWebExchange exchange) {
-        return null;
+        return userLoginRequest
+                .flatMap( request ->
+                        userService.userLogin(request.getEmail(), request.getPassword())
+                ).map(ResponseEntity::ok);
     }
 
     @Override
