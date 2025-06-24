@@ -32,11 +32,18 @@ dependencies {
     implementation("org.openapitools:jackson-databind-nullable:0.2.6")
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.4.0")
     implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
     compileOnly("javax.annotation:javax.annotation-api:1.3.2")
     compileOnly("org.projectlombok:lombok")
+
+    runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.1.121.Final:osx-aarch_64")
+
     annotationProcessor("org.projectlombok:lombok")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
+
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
