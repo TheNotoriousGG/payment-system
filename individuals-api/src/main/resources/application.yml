@@ -1,6 +1,21 @@
 spring:
   application:
     name: individuals-api
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.url}/realms/${keycloak.realm_name}
+          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+
+keycloak:
+  url: ${KEYCLOAK_URL:http://localhost:8080}
+  realm_name: ${KEYCLOAK_REALM:individuals}
+  client_id: ${KEYCLOAK_CLIENT_ID:individuals-api}
+  client_secret: ${KEYCLOAK_CLIENT_SECRET:szq1WTRUf03p9EeSqYmnAQAH7jucCzsL}
+  admin_username: ${KEYCLOAK_ADMIN_USERNAME:geo}
+  admin_password: ${KEYCLOAK_ADMIN_PASSWORD:geo}
+
 
 server:
   port: 8081
