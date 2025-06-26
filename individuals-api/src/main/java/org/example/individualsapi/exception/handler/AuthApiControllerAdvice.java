@@ -16,6 +16,6 @@ public class AuthApiControllerAdvice {
 
         return ResponseEntity
                 .status(HttpStatus.valueOf(errorResponse.getStatus()))
-                .body(errorResponse.getError());
+                .body(errorResponse);
     }
 }

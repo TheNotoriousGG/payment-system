@@ -12,7 +12,7 @@ keycloak:
   url: ${KEYCLOAK_URL:http://localhost:8080}
   realm_name: ${KEYCLOAK_REALM:individuals}
   client_id: ${KEYCLOAK_CLIENT_ID:individuals-api}
-  client_secret: ${KEYCLOAK_CLIENT_SECRET:szq1WTRUf03p9EeSqYmnAQAH7jucCzsL}
+  client_secret: ${KEYCLOAK_CLIENT_SECRET:ZmkJaSPWHNeGNnpHoCJ5lF0x1nZ4OAAy}
   admin_username: ${KEYCLOAK_ADMIN_USERNAME:geo}
   admin_password: ${KEYCLOAK_ADMIN_PASSWORD:geo}
 

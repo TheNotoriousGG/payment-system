@@ -41,7 +41,10 @@ public class AuthApiImpl implements AuthApi {
 
     @Override
     public Mono<ResponseEntity<TokenResponse>> authRefreshTokenPost(Mono<TokenRefreshRequest> tokenRefreshRequest, ServerWebExchange exchange) {
-        return null;
+        return tokenRefreshRequest
+                .flatMap( request ->
+                        userService.refreshToken(request.getRefreshToken())
+                ).map(ResponseEntity::ok);
     }
 
     @Override
@@ -50,8 +53,6 @@ public class AuthApiImpl implements AuthApi {
         return userRegistrationRequest
                 .flatMap(request ->
                         userService.userRegistration(Mono.just(request))
-                )
-                .map(tokenResponse -> ResponseEntity.status(HttpStatus.CREATED).body(tokenResponse));
-
+                ).map(tokenResponse -> ResponseEntity.status(HttpStatus.CREATED).body(tokenResponse));
     }
 }
