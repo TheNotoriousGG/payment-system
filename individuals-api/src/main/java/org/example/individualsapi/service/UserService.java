@@ -26,7 +26,7 @@ public class UserService {
         return userRegistrationRequest
                 .flatMap(request -> {
                     if (!Objects.equals(request.getPassword(), request.getConfirmPassword())) {
-                        return Mono.error(new RequestValidationException("Passwords do not match"));
+                        return Mono.error(new RequestValidationException("Passwords do not match"));//todo
                     }
 
                     String email = request.getEmail();
@@ -50,5 +50,9 @@ public class UserService {
 
     public Mono<TokenResponse> userLogin(String email, String password) {
         return keycloakService.getUserToken(usernameFromEmail(email), password);
+    }
+
+    public Mono<TokenResponse> refreshToken(@NotNull String refreshToken) {
+        return keycloakService.refreshToken(refreshToken);
     }
 }

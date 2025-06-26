@@ -2,6 +2,7 @@ package org.example.individualsapi.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.individualsapi.exception.KeycloakApiException;
@@ -66,6 +67,26 @@ public class KeycloakService {
                 .doOnError(throwable -> log.error("Error in try to get token for user: {} -> {}",username, throwable.getMessage()));
     }
 
+    public Mono<TokenResponse> refreshToken(@NotNull String refreshToken) {
+
+        MultiValueMap<String,String> formData = createRefreshTokenRequest(refreshToken);
+
+        return webClient.post()
+                .uri(String.format("/realms/%s/protocol/openid-connect/token",realmName))
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                .body(BodyInserters.fromFormData(formData))
+                .retrieve()
+                .onStatus(httpStatusCode ->
+                                httpStatusCode.is4xxClientError() ||
+                                        httpStatusCode.is5xxServerError(),
+                        keycloakErrorHandler()
+                ).bodyToMono(TokenResponse.class)
+                .doOnSuccess(_ -> log.info("Token successfully refreshed"))
+                .doOnError(throwable -> log.error("Error in try to refresh token -> {}", throwable.getMessage()));
+
+
+    }
+
     public Mono<Void> addNewUser(String email, String password, String username, String adminToken) {
 
         KeycloakUserRequest requestBody = KeycloakUserRequest.builder()
@@ -109,12 +130,20 @@ public class KeycloakService {
         return getUserToken(adminUsername, adminPassword);
     }
 
-
     private MultiValueMap<String, String> createTokenRequestBody(String username, String password) {
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "password");
         formData.add("username", username);
         formData.add("password", password);
+        formData.add("client_id", clientId);
+        formData.add("client_secret", clientSecret);
+        return formData;
+    }
+
+    private MultiValueMap<String, String> createRefreshTokenRequest(String refreshToken) {
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("grant_type", "refresh_token");
+        formData.add("refresh_token", refreshToken);
         formData.add("client_id", clientId);
         formData.add("client_secret", clientSecret);
         return formData;
