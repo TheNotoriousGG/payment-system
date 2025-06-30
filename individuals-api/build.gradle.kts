@@ -33,6 +33,9 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.4.0")
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+
 
     compileOnly("javax.annotation:javax.annotation-api:1.3.2")
     compileOnly("org.projectlombok:lombok")
@@ -43,6 +46,7 @@ dependencies {
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

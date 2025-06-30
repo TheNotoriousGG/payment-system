@@ -11,6 +11,7 @@ import org.example.individualsapi.model.KeycloakUserCredentials;
 import org.example.individualsapi.model.KeycloakUserRequest;
 import org.example.individualsapi.model.dto.ErrorResponse;
 import org.example.individualsapi.model.dto.TokenResponse;
+import org.example.individualsapi.model.dto.UserInfoResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -46,6 +47,22 @@ public class KeycloakService {
 
     @Value("${keycloak.admin_password}")
     private String adminPassword;
+
+    public Mono<UserInfoResponse> getUserInfo(@NotNull String userId, String adminToken) {
+        log.info("Get user info for user id {}", userId);
+
+        return webClient.get()
+                .uri(String.format("/admin/realms/%s/users/%s",realmName, userId))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer "+ adminToken)
+                .retrieve()
+                .onStatus(httpStatusCode ->
+                                httpStatusCode.is4xxClientError() ||
+                                        httpStatusCode.is5xxServerError(),
+                        keycloakErrorHandler()
+                ).bodyToMono(UserInfoResponse.class)
+                .doOnSuccess(_ -> log.info("User info successfully received userId =  {}", userId))
+                .doOnError(throwable -> log.info("Error in try to get user info userId = {}, error = {}", userId, throwable.getMessage()));
+    }
 
     public Mono<TokenResponse> getUserToken(String username, String password) {
         log.info("Getting user token for {}", username);
