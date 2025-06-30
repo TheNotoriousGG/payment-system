@@ -2,11 +2,19 @@ spring:
   application:
     name: individuals-api
   security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${keycloak.url}/realms/${keycloak.realm_name}
-          jwk-set-uri: ${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs
+      oauth2:
+        client:
+          registration:
+            keycloak:
+              provider: keycloak
+              client-id: ${keycloak.client_id}
+              client-secret: ${keycloak.client_secret}
+              client-name: ${keycloak.client_id}
+              authorization-grant-type: authorization_code
+              scope: openid, profile, email
+        resourceserver:
+          jwt:
+            issuer-uri: ${keycloak.url}/realms/${keycloak.realm_name}
 
 keycloak:
   url: ${KEYCLOAK_URL:http://localhost:8080}

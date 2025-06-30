@@ -1,13 +1,12 @@
 package org.example.individualsapi.service;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.example.individualsapi.exception.RequestValidationException;
 import org.example.individualsapi.model.dto.TokenResponse;
+import org.example.individualsapi.model.dto.UserInfoResponse;
 import org.example.individualsapi.model.dto.UserRegistrationRequest;
-import org.example.individualsapi.util.StrUtils;
-import org.springframework.http.ResponseEntity;
+import org.example.individualsapi.util.AuthContextUtil;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -54,5 +53,16 @@ public class UserService {
 
     public Mono<TokenResponse> refreshToken(@NotNull String refreshToken) {
         return keycloakService.refreshToken(refreshToken);
+    }
+
+    public Mono<UserInfoResponse> getAuthUserInfoFromContext() {
+        return AuthContextUtil.getCurrentUserId()
+                .flatMap(userId ->
+                        keycloakService.getAdminToken()
+                                .map(TokenResponse::getAccessToken)
+                                .flatMap(adminToken ->
+                                        keycloakService.getUserInfo(userId, adminToken)
+                                )
+                );
     }
 }
