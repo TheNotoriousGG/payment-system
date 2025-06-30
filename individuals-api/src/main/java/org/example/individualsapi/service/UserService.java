@@ -3,6 +3,7 @@ package org.example.individualsapi.service;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.example.individualsapi.exception.RequestValidationException;
+import org.example.individualsapi.mapper.UserMapper;
 import org.example.individualsapi.model.dto.TokenResponse;
 import org.example.individualsapi.model.dto.UserInfoResponse;
 import org.example.individualsapi.model.dto.UserRegistrationRequest;
@@ -19,6 +20,7 @@ import static org.example.individualsapi.util.StrUtils.*;
 public class UserService {
 
     private final KeycloakService keycloakService;
+    private final UserMapper userMapper;
 
     public Mono<TokenResponse> userRegistration(Mono<UserRegistrationRequest> userRegistrationRequest) {
 
@@ -62,6 +64,14 @@ public class UserService {
                                 .map(TokenResponse::getAccessToken)
                                 .flatMap(adminToken ->
                                         keycloakService.getUserInfo(userId, adminToken)
+                                                .map(userMapper::toUserInfoResponse)
+                                                .flatMap(userInfoResponse ->
+                                                        AuthContextUtil.getUserRolesFromContext()
+                                                                .map(roles -> {
+                                                                    userInfoResponse.setRoles(roles);
+                                                                    return userInfoResponse;
+                                                                })
+                                                )
                                 )
                 );
     }
