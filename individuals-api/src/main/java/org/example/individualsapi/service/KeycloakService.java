@@ -1,7 +1,5 @@
 package org.example.individualsapi.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +7,7 @@ import org.example.individualsapi.exception.KeycloakApiException;
 import org.example.individualsapi.model.KeycloakError;
 import org.example.individualsapi.model.KeycloakUserCredentials;
 import org.example.individualsapi.model.KeycloakUserRequest;
+import org.example.individualsapi.model.KeycloakUserResponse;
 import org.example.individualsapi.model.dto.ErrorResponse;
 import org.example.individualsapi.model.dto.TokenResponse;
 import org.example.individualsapi.model.dto.UserInfoResponse;
@@ -48,7 +47,7 @@ public class KeycloakService {
     @Value("${keycloak.admin_password}")
     private String adminPassword;
 
-    public Mono<UserInfoResponse> getUserInfo(@NotNull String userId, String adminToken) {
+    public Mono<KeycloakUserResponse> getUserInfo(@NotNull String userId, String adminToken) {
         log.info("Get user info for user id {}", userId);
 
         return webClient.get()
@@ -59,7 +58,7 @@ public class KeycloakService {
                                 httpStatusCode.is4xxClientError() ||
                                         httpStatusCode.is5xxServerError(),
                         keycloakErrorHandler()
-                ).bodyToMono(UserInfoResponse.class)
+                ).bodyToMono(KeycloakUserResponse.class)
                 .doOnSuccess(_ -> log.info("User info successfully received userId =  {}", userId))
                 .doOnError(throwable -> log.info("Error in try to get user info userId = {}, error = {}", userId, throwable.getMessage()));
     }

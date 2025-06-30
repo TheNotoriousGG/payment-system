@@ -35,7 +35,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-
+    implementation("org.mapstruct:mapstruct:1.5.5.Final")
 
     compileOnly("javax.annotation:javax.annotation-api:1.3.2")
     compileOnly("org.projectlombok:lombok")
@@ -43,6 +43,7 @@ dependencies {
     runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.1.121.Final:osx-aarch_64")
 
     annotationProcessor("org.projectlombok:lombok")
+    annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
