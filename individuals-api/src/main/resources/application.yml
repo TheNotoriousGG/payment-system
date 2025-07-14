@@ -16,6 +16,11 @@ spring:
           jwt:
             issuer-uri: ${keycloak.url}/realms/${keycloak.realm_name}
 
+logging:
+  level:
+    org.example.individualsapi.service: DEBUG
+    org.example.individualsapi.util: DEBUG
+
 keycloak:
   url: ${KEYCLOAK_URL:http://localhost:8080}
   realm_name: ${KEYCLOAK_REALM:individuals}
@@ -23,7 +28,6 @@ keycloak:
   client_secret: ${KEYCLOAK_CLIENT_SECRET:ZmkJaSPWHNeGNnpHoCJ5lF0x1nZ4OAAy}
   admin_username: ${KEYCLOAK_ADMIN_USERNAME:geo}
   admin_password: ${KEYCLOAK_ADMIN_PASSWORD:geo}
-
 
 server:
   port: 8081

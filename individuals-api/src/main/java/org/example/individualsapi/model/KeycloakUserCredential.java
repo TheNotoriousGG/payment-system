@@ -6,10 +6,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class KeycloakUserCredentials {
+public class KeycloakUserCredential {
     private String type;
     private String value;
     private boolean temporary;
