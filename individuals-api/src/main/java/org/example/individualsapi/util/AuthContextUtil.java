@@ -18,13 +18,4 @@ public class AuthContextUtil {
                 .map(auth -> (Jwt) auth.getPrincipal())
                 .map(JwtClaimAccessor::getSubject);
     }
-
-    public static Mono<List<String>> getUserRolesFromContext() {
-        return ReactiveSecurityContextHolder.getContext()
-                .map(SecurityContext::getAuthentication)
-                .map(auth -> auth.getAuthorities().stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .toList())
-                .defaultIfEmpty(Collections.emptyList());
-    }
 }
