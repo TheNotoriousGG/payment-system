@@ -16,5 +16,5 @@ public class KeycloakUserRequest {
     private String firstName;
     private String lastName;
     private boolean emailVerified;
-    private List<KeycloakUserCredentials> credentials;
+    private List<KeycloakUserCredential> credentials;
 }
