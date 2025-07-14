@@ -1,0 +1,31 @@
+@startuml
+actor Client
+participant API
+participant Keycloak
+
+== Регистрация пользователя ==
+Client -> API: POST /v1/auth/registration
+API -> Keycloak: Create User
+Keycloak --> API: OK
+API -> Keycloak: Request token
+Keycloak --> API: access_token, refresh_token
+API --> Client: Tokens
+
+== Авторизация пользователя ==
+Client -> API: POST /v1/auth/login
+API -> Keycloak: Get User Tokens
+Keycloak --> API: access_token, refresh_token
+API --> Client: Tokens
+
+== Аутентификация пользователя ==
+Client -> API: GET /v1/auth/me
+API -> Keycloak: Get user info
+Keycloak --> API: User data
+API --> Client: User data
+
+== Обновление токена ==
+Client -> API: POST /1/auth/refresh_token
+API -> Keycloak: Refresh Token
+Keycloak --> API: access_token, refresh_token
+API --> Client: Tokens
+@enduml
