@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 public class KeycloakError {
 
     private String error;
-
+    
     @JsonProperty("error_description")
     private String errorDescription;
 }

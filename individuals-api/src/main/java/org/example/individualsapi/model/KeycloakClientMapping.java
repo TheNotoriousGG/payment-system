@@ -11,6 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class KeycloakClientMapping {
+    
     private String id;
     private String client;
 

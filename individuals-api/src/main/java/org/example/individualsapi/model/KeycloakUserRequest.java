@@ -10,6 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @ToString
 public class KeycloakUserRequest {
+    
     private String username;
     private String email;
     private boolean enabled;
