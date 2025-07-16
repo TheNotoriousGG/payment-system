@@ -46,7 +46,6 @@ public class AuthApiImpl implements AuthApi {
 
     @Override
     public Mono<ResponseEntity<TokenResponse>> authRegistrationPost(@RequestBody Mono<UserRegistrationRequest> userRegistrationRequest, ServerWebExchange exchange) {
-
         return userRegistrationRequest
                 .flatMap(request ->
                         userService.userRegistration(Mono.just(request))

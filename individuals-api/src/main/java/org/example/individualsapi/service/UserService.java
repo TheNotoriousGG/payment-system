@@ -39,7 +39,6 @@ public class UserService {
     private final KeycloakProperties keycloakProperties;
 
     public Mono<TokenResponse> userRegistration(Mono<UserRegistrationRequest> userRegistrationRequest) {
-
         return userRegistrationRequest
                 .flatMap(this::validateUserRegistrationRequest)
                 .flatMap(request ->
@@ -48,6 +47,51 @@ public class UserService {
                                         usernameFromEmail(request.getEmail()),request.getPassword()
                                 )
                         ));
+    }
+
+    public Mono<TokenResponse> userLogin(String email, String password) {
+        return tokenService.getUserToken(usernameFromEmail(email), password);
+    }
+
+    public Mono<TokenResponse> refreshToken(String refreshToken) {
+        return tokenService.refreshToken(refreshToken);
+    }
+
+    public Mono<UserInfoResponse> getAuthUserInfo() {
+        log.info("Get auth user info");
+
+        return tokenService.getServiceToken()
+                .flatMap(serviceToken ->
+                        AuthContextUtil.getCurrentUserId()
+                                .flatMap(userId ->
+                                         Mono.zip(
+                                            getUserInfo(userId, serviceToken),
+                                            getUserRoles(userId, serviceToken)
+                                         )
+                                )
+                                .map(tuple -> {
+                                    UserInfoResponse userInfoResponse = userMapper.toUserInfoResponse(tuple.getT1());
+                                    userInfoResponse.roles(
+                                            extractClientRoles(tuple.getT2())
+                                    );
+
+                                    return userInfoResponse;
+                                })
+                ).doOnSuccess(_ -> log.info("Auth user info received"))
+                .doOnError(_ -> log.error("Error in try to get auth user info"));
+    }
+
+    public Mono<KeycloakRoleMappingResponse> getUserRoles(String userId, String adminToken) {
+        log.info("Get user roles");
+
+        return webClient.get()
+                .uri(keycloakProperties.getUserRolesEndpoint(userId))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
+                .bodyToMono(KeycloakRoleMappingResponse.class)
+                .doOnSuccess(_ -> log.info("User roles successfully received from keycloak userId = {}", userId))
+                .doOnError(throwable -> log.error("Error in try to get user roles from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
     }
 
     private Mono<Void> addNewKeycloakUser(String email, String password) {
@@ -84,57 +128,11 @@ public class UserService {
                 .doOnError(throwable -> log.error("Error in try to get user from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
     }
 
-    public Mono<TokenResponse> userLogin(String email, String password) {
-        return tokenService.getUserToken(usernameFromEmail(email), password);
-    }
-
-    public Mono<TokenResponse> refreshToken(String refreshToken) {
-        return tokenService.refreshToken(refreshToken);
-    }
-
     private Mono<UserRegistrationRequest> validateUserRegistrationRequest(UserRegistrationRequest request) {
         if (!Objects.equals(request.getPassword(), request.getConfirmPassword())) {
             return Mono.error(new RequestValidationException("Passwords do not match"));
         }
         return Mono.just(request);
-    }
-
-    public Mono<UserInfoResponse> getAuthUserInfo() {
-        log.info("Get auth user info");
-
-        return tokenService.getServiceToken()
-                .flatMap(serviceToken ->
-                        AuthContextUtil.getCurrentUserId()
-                                .flatMap(userId ->
-                                         Mono.zip(
-                                            getUserInfo(userId, serviceToken),
-                                            getUserRoles(userId, serviceToken)
-                                         )
-                                )
-                                .map(tuple -> {
-                                    UserInfoResponse userInfoResponse = userMapper.toUserInfoResponse(tuple.getT1());
-                                    userInfoResponse.roles(
-                                            extractClientRoles(tuple.getT2())
-                                    );
-
-                                    return userInfoResponse;
-                                })
-                ).doOnSuccess(_ -> log.info("Auth user info received"))
-                .doOnError(_ -> log.error("Error in try to get auth user info"));
-
-    }
-
-    public Mono<KeycloakRoleMappingResponse> getUserRoles(String userId, String adminToken) {
-        log.info("Get user roles");
-
-        return webClient.get()
-                .uri(keycloakProperties.getUserRolesEndpoint(userId))
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
-                .bodyToMono(KeycloakRoleMappingResponse.class)
-                .doOnSuccess(_ -> log.info("User roles successfully received from keycloak userId = {}", userId))
-                .doOnError(throwable -> log.error("Error in try to get user roles from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
     }
 
     private List<String> extractClientRoles(KeycloakRoleMappingResponse roleMappings) {
