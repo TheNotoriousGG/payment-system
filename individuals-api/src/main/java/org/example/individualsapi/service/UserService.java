@@ -1,11 +1,12 @@
 package org.example.individualsapi.service;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.individualsapi.config.KeycloakProperties;
 import org.example.individualsapi.exception.RequestValidationException;
 import org.example.individualsapi.mapper.UserMapper;
+import org.example.individualsapi.model.KeycloakRoleMapping;
+import org.example.individualsapi.model.KeycloakRoleMappingResponse;
 import org.example.individualsapi.model.KeycloakUserRequest;
 import org.example.individualsapi.model.KeycloakUserResponse;
 import org.example.individualsapi.model.dto.TokenResponse;
@@ -21,6 +22,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Objects;
 
 import static org.example.individualsapi.util.ErrorHandlingUtil.keycloakErrorHandler;
@@ -55,10 +57,9 @@ public class UserService {
         log.info("Request body {}", requestBody);
 
         return tokenService.getServiceToken()
-            .doOnNext(token -> log.debug("Using service token: {}...", token.substring(0, Math.min(20, token.length()))))
-            .flatMap(token -> 
+            .flatMap(token ->
                 webClient.post()
-                    .uri(keycloakProperties.getAdminUsersUrl())
+                    .uri(keycloakProperties.getUserInfoEndpoint())
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                     .body(BodyInserters.fromValue(requestBody))
@@ -70,20 +71,17 @@ public class UserService {
             .doOnError(throwable -> log.error("Error in try to add new user: {} -> {}", email, throwable.getMessage()));
     }
 
-    public Mono<KeycloakUserResponse> getUserInfo(String userId, String adminToken) {
+    private Mono<KeycloakUserResponse> getUserInfo(String userId, String adminToken) {
         log.info("Get user info for user id {}", userId);
 
         return webClient.get()
-                .uri(keycloakProperties.getAdminUsersUrl())
+                .uri(keycloakProperties.getUserEndpoint(userId))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer "+ adminToken)
                 .retrieve()
-                .onStatus(httpStatusCode ->
-                                httpStatusCode.is4xxClientError() ||
-                                        httpStatusCode.is5xxServerError(),
-                        keycloakErrorHandler()
-                ).bodyToMono(KeycloakUserResponse.class)
-                .doOnSuccess(_ -> log.info("User info successfully received userId =  {}", userId))
-                .doOnError(throwable -> log.info("Error in try to get user info userId = {}, error = {}", userId, throwable.getMessage()));
+                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
+                .bodyToMono(KeycloakUserResponse.class)
+                .doOnSuccess(_ -> log.info("User info successfully received from keycloak userId =  {}", userId))
+                .doOnError(throwable -> log.error("Error in try to get user from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
     }
 
     public Mono<TokenResponse> userLogin(String email, String password) {
@@ -99,5 +97,50 @@ public class UserService {
             return Mono.error(new RequestValidationException("Passwords do not match"));
         }
         return Mono.just(request);
+    }
+
+    public Mono<UserInfoResponse> getAuthUserInfo() {
+        log.info("Get auth user info");
+
+        return tokenService.getServiceToken()
+                .flatMap(serviceToken ->
+                        AuthContextUtil.getCurrentUserId()
+                                .flatMap(userId ->
+                                         Mono.zip(
+                                            getUserInfo(userId, serviceToken),
+                                            getUserRoles(userId, serviceToken)
+                                         )
+                                )
+                                .map(tuple -> {
+                                    UserInfoResponse userInfoResponse = userMapper.toUserInfoResponse(tuple.getT1());
+                                    userInfoResponse.roles(
+                                            extractClientRoles(tuple.getT2())
+                                    );
+
+                                    return userInfoResponse;
+                                })
+                ).doOnSuccess(_ -> log.info("Auth user info received"))
+                .doOnError(_ -> log.error("Error in try to get auth user info"));
+
+    }
+
+    public Mono<KeycloakRoleMappingResponse> getUserRoles(String userId, String adminToken) {
+        log.info("Get user roles");
+
+        return webClient.get()
+                .uri(keycloakProperties.getUserRolesEndpoint(userId))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
+                .bodyToMono(KeycloakRoleMappingResponse.class)
+                .doOnSuccess(_ -> log.info("User roles successfully received from keycloak userId = {}", userId))
+                .doOnError(throwable -> log.error("Error in try to get user roles from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
+    }
+
+    private List<String> extractClientRoles(KeycloakRoleMappingResponse roleMappings) {
+        return roleMappings.getClientMappings().get(keycloakProperties.getClientId())
+                .getMappings().stream()
+                .map(KeycloakRoleMapping::getName)
+                .toList();
     }
 }

@@ -32,7 +32,8 @@ public class AuthApiImpl implements AuthApi {
 
     @Override
     public Mono<ResponseEntity<UserInfoResponse>> authMeGet(ServerWebExchange exchange) {
-        return null;
+        return userService.getAuthUserInfo()
+                .map(ResponseEntity::ok);
     }
 
     @Override

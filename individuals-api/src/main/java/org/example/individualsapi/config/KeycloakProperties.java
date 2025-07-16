@@ -1,6 +1,5 @@
 package org.example.individualsapi.config;
 
-import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -32,23 +31,31 @@ public final class KeycloakProperties {
     @NotBlank
     private final String adminPassword;
 
-    public String getRealmUrl() {
+    public String getRealmBaseUrl() {
         return url + "/realms/" + realmName;
     }
 
-    public String getAdminUrl() {
+    public String getAdminBaseUrl() {
         return url + "/admin/realms/" + realmName;
     }
 
-    public String getTokenUrl() {
-        return getRealmUrl() + "/protocol/openid-connect/token";
+    public String getTokenEndpoint() {
+        return getRealmBaseUrl() + "/protocol/openid-connect/token";
     }
 
-    public String getUserInfoUrl() {
-        return getRealmUrl() + "/protocol/openid-connect/userinfo";
+    public String getUserInfoEndpoint() {
+        return getRealmBaseUrl() + "/protocol/openid-connect/userinfo";
     }
 
-    public String getAdminUsersUrl() {
-        return getAdminUrl() + "/users";
+    public String getUsersEndpoint() {
+        return getAdminBaseUrl() + "/users";
+    }
+
+    public String getUserEndpoint(String userId) {
+        return getUsersEndpoint() + "/" + userId;
+    }
+
+    public String getUserRolesEndpoint(String userId) {
+        return getUsersEndpoint() + "/" + userId + "/role-mappings";
     }
 }

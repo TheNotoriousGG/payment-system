@@ -105,7 +105,7 @@ public class TokenService {
         log.debug("Request FormData: {}", formData);
 
         return webClient.post()
-                .uri(keycloakProperties.getTokenUrl())
+                .uri(keycloakProperties.getTokenEndpoint())
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                 .body(BodyInserters.fromFormData(formData))
                 .retrieve()
@@ -133,7 +133,7 @@ public class TokenService {
         log.debug("Refresh FormData: {}", formData);
 
         return webClient.post()
-                .uri(keycloakProperties.getTokenUrl())
+                .uri(keycloakProperties.getTokenEndpoint())
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                 .body(BodyInserters.fromFormData(formData))
                 .retrieve()
