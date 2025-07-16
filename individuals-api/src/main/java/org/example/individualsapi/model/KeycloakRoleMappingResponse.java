@@ -18,5 +18,4 @@ public class KeycloakRoleMappingResponse {
 
     @JsonProperty("clientMappings")
     private Map<String, KeycloakClientMapping> clientMappings;
-
 }

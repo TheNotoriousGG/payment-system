@@ -43,17 +43,6 @@ public class TokenService {
             );
     }
 
-    private Mono<TokenResponse> fetchServiceToken() {
-        return getUserToken(keycloakProperties.getAdminUsername(), keycloakProperties.getAdminPassword());
-    }
-
-    private void manageServiceTokenState(TokenResponse tokenResponse) {
-        serviceToken.set(tokenResponse);
-        serviceAccessTokenExpireMoment.set(LocalDateTime.now().plusSeconds(tokenResponse.getExpiresIn() - 10));
-        serviceRefreshTokenExpireMoment.set(LocalDateTime.now().plusSeconds(tokenResponse.getRefreshExpiresIn() - 10));
-        log.info("Service token state updated");
-    }
-
     public Mono<String> getServiceToken() {
         LocalDateTime accessExpiry = serviceAccessTokenExpireMoment.get();
         LocalDateTime refreshExpiry = serviceRefreshTokenExpireMoment.get();
@@ -82,14 +71,6 @@ public class TokenService {
                 .doOnNext(this::manageServiceTokenState)
                 .map(TokenResponse::getAccessToken);
         }
-    }
-
-    private Mono<TokenResponse> refreshServiceToken() {
-        TokenResponse currentToken = serviceToken.get();
-        if (currentToken == null || currentToken.getRefreshToken() == null) {
-            return Mono.error(new IllegalStateException("No refresh token available"));
-        }
-        return refreshToken(currentToken.getRefreshToken());
     }
 
     public Mono<TokenResponse> getUserToken(String username, String password) {
@@ -147,5 +128,24 @@ public class TokenService {
                         token.getExpiresIn());
                 })
                 .doOnError(throwable -> log.error("Error refreshing token: {}", throwable.getMessage()));
+    }
+
+    private Mono<TokenResponse> fetchServiceToken() {
+        return getUserToken(keycloakProperties.getAdminUsername(), keycloakProperties.getAdminPassword());
+    }
+
+    private Mono<TokenResponse> refreshServiceToken() {
+        TokenResponse currentToken = serviceToken.get();
+        if (currentToken == null || currentToken.getRefreshToken() == null) {
+            return Mono.error(new IllegalStateException("No refresh token available"));
+        }
+        return refreshToken(currentToken.getRefreshToken());
+    }
+
+    private void manageServiceTokenState(TokenResponse tokenResponse) {
+        serviceToken.set(tokenResponse);
+        serviceAccessTokenExpireMoment.set(LocalDateTime.now().plusSeconds(tokenResponse.getExpiresIn() - 10));
+        serviceRefreshTokenExpireMoment.set(LocalDateTime.now().plusSeconds(tokenResponse.getRefreshExpiresIn() - 10));
+        log.info("Service token state updated");
     }
 }
