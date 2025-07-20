@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.example.individualsapi.util.ErrorHandlingUtil.keycloakErrorHandler;
+import static org.example.individualsapi.util.ErrorHandlingUtil.keycloakHttpErrorMapper;
 import static org.example.individualsapi.util.RequestBuilder.buildGetTokenRequestFormData;
 import static org.example.individualsapi.util.RequestBuilder.buildRefreshTokenRequestFormData;
 
@@ -90,7 +90,7 @@ public class TokenService {
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                 .body(BodyInserters.fromFormData(formData))
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
+                .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(TokenResponse.class)
                 .doOnSuccess(token -> {
                     log.info("Token for user {} successfully received", username);
@@ -118,7 +118,7 @@ public class TokenService {
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                 .body(BodyInserters.fromFormData(formData))
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
+                .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(TokenResponse.class)
                 .doOnSuccess(token -> {
                     log.info("Token successfully refreshed");

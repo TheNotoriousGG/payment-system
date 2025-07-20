@@ -18,7 +18,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static org.example.individualsapi.util.ErrorHandlingUtil.keycloakErrorHandler;
+import static org.example.individualsapi.util.ErrorHandlingUtil.keycloakHttpErrorMapper;
 
 @Slf4j
 @Service
@@ -41,7 +41,7 @@ public class KeycloakClient {
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .body(BodyInserters.fromValue(requestBody))
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
+                .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(Void.class)
                 .doOnSuccess(_ -> log.info("User {} successfully added", email))
                 .doOnError(throwable -> log.error("Error in try to add new user: {} -> {}", email, throwable.getMessage()));
@@ -54,7 +54,7 @@ public class KeycloakClient {
                 .uri(keycloakProperties.getUserRolesEndpoint(userId))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
+                .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(KeycloakRoleMappingResponse.class)
                 .doOnSuccess(_ -> log.info("User roles successfully received from keycloak userId = {}", userId))
                 .doOnError(throwable -> log.error("Error in try to get user roles from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
@@ -67,7 +67,7 @@ public class KeycloakClient {
                 .uri(keycloakProperties.getUserEndpoint(userId))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer "+ serviceToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::isError, keycloakErrorHandler())
+                .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(KeycloakUserResponse.class)
                 .doOnSuccess(_ -> log.info("User info successfully received from keycloak userId =  {}", userId))
                 .doOnError(throwable -> log.error("Error in try to get user from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
