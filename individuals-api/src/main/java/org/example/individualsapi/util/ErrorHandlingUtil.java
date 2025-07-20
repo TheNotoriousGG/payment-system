@@ -10,7 +10,7 @@ import java.util.function.Function;
 
 public class ErrorHandlingUtil {
 
-    public static Function<ClientResponse, Mono<? extends Throwable>> keycloakErrorHandler() {
+    public static Function<ClientResponse, Mono<? extends Throwable>> keycloakHttpErrorMapper() {
         return clientResponse ->
                 clientResponse.bodyToMono(KeycloakError.class)
                         .flatMap(error -> {
