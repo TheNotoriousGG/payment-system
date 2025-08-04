@@ -27,29 +27,34 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.4.0")
     implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.openapitools:jackson-databind-nullable:0.2.6")
-    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.4.0")
-    implementation("io.micrometer:micrometer-registry-prometheus")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
+
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.4.0")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.6")
+
+    implementation("io.micrometer:micrometer-registry-prometheus")
+
     implementation("org.mapstruct:mapstruct:1.5.5.Final")
 
     compileOnly("javax.annotation:javax.annotation-api:1.3.2")
     compileOnly("org.projectlombok:lombok")
 
-    runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.1.121.Final:osx-aarch_64")
-
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.5.5.Final")
 
+    runtimeOnly("io.netty:netty-resolver-dns-native-macos:4.1.121.Final:osx-aarch_64")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
-    testImplementation("org.springframework.boot:spring-boot-starter-oauth2-client")
-
+    testImplementation(platform("org.testcontainers:testcontainers-bom:1.19.3"))
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("com.github.dasniko:testcontainers-keycloak:3.4.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testCompileOnly("org.assertj:assertj-core:3.11.1")
 }
 
 openApiGenerate {

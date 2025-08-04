@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: individuals-api-test
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.url}/realms/${keycloak.realm_name}
+
+keycloak:
+  realm_name: test-realm
+  client_id: test-client
+  client_secret: test-client-secret
+  admin_username: test-admin
+  admin_password: test-admin-password
+
+server:
+  port: 0
+
+logging:
+  level:
+    org.example.individualsapi: DEBUG
+    org.testcontainers: INFO

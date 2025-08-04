@@ -26,11 +26,10 @@ import static org.example.individualsapi.util.RequestBuilder.buildRefreshTokenRe
 @RequiredArgsConstructor
 public class TokenService {
 
-    private final WebClient webClient;
-    private final KeycloakProperties keycloakProperties;
     private final AtomicReference<TokenResponse> serviceToken = new AtomicReference<>();
     private final AtomicReference<LocalDateTime> serviceAccessTokenExpireMoment = new AtomicReference<>();
     private final AtomicReference<LocalDateTime> serviceRefreshTokenExpireMoment = new AtomicReference<>();
+    private final KeycloakClient keycloakClient;
 
     @PostConstruct
     public void init() {
@@ -76,62 +75,19 @@ public class TokenService {
     public Mono<TokenResponse> getUserToken(String username, String password) {
         log.info("Getting user token for {}", username);
 
-        var formData = buildGetTokenRequestFormData(
-                username,
-                password,
-                keycloakProperties.getClientId(),
-                keycloakProperties.getClientSecret()
-        );
-        
-        log.debug("Request FormData: {}", formData);
-
-        return webClient.post()
-                .uri(keycloakProperties.getTokenEndpoint())
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .body(BodyInserters.fromFormData(formData))
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
-                .bodyToMono(TokenResponse.class)
-                .doOnSuccess(token -> {
-                    log.info("Token for user {} successfully received", username);
-                    log.debug("Token response: access_token length={}, refresh_token length={}, expires_in={}", 
-                        token.getAccessToken() != null ? token.getAccessToken().length() : 0,
-                        token.getRefreshToken() != null ? token.getRefreshToken().length() : 0,
-                        token.getExpiresIn());
-                })
-                .doOnError(throwable -> log.error("Error getting token for user: {} -> {}", username, throwable.getMessage()));
+        return keycloakClient.authenticateUser(username, password);
     }
 
     public Mono<TokenResponse> refreshToken(@NotNull String refreshToken) {
         log.debug("Refreshing token");
 
-        var formData = buildRefreshTokenRequestFormData(
-                refreshToken,
-                keycloakProperties.getClientId(),
-                keycloakProperties.getClientSecret()
-        );
-        
-        log.debug("Refresh FormData: {}", formData);
-
-        return webClient.post()
-                .uri(keycloakProperties.getTokenEndpoint())
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .body(BodyInserters.fromFormData(formData))
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
-                .bodyToMono(TokenResponse.class)
-                .doOnSuccess(token -> {
-                    log.info("Token successfully refreshed");
-                    log.debug("Refresh response: access_token length={}, refresh_token length={}, expires_in={}", 
-                        token.getAccessToken() != null ? token.getAccessToken().length() : 0,
-                        token.getRefreshToken() != null ? token.getRefreshToken().length() : 0,
-                        token.getExpiresIn());
-                })
-                .doOnError(throwable -> log.error("Error refreshing token: {}", throwable.getMessage()));
+        return keycloakClient.refreshToken(refreshToken);
     }
 
     private Mono<TokenResponse> fetchServiceToken() {
-        return getUserToken(keycloakProperties.getAdminUsername(), keycloakProperties.getAdminPassword());
+        log.info("Fetching service token");
+
+        return keycloakClient.fetchServiceToken();
     }
 
     private Mono<TokenResponse> refreshServiceToken() {
