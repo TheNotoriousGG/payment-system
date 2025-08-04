@@ -4,22 +4,12 @@ import jakarta.annotation.PostConstruct;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.example.individualsapi.config.KeycloakProperties;
 import org.example.individualsapi.model.dto.TokenResponse;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.example.individualsapi.util.ErrorHandlingUtil.keycloakHttpErrorMapper;
-import static org.example.individualsapi.util.RequestBuilder.buildGetTokenRequestFormData;
-import static org.example.individualsapi.util.RequestBuilder.buildRefreshTokenRequestFormData;
 
 @Service
 @Slf4j

@@ -13,8 +13,8 @@ import reactor.core.publisher.Mono;
 
 import static org.example.individualsapi.util.StrUtils.usernameFromEmail;
 
-@Slf4j
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class UserService {
 

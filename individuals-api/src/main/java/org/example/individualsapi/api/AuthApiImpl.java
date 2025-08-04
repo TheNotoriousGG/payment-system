@@ -15,9 +15,9 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/v1")
-@RequiredArgsConstructor
 @Validated
 @Slf4j
+@RequiredArgsConstructor
 public class AuthApiImpl implements AuthApi {
 
     private final UserService userService;

@@ -24,14 +24,13 @@ import static org.example.individualsapi.util.ErrorHandlingUtil.keycloakHttpErro
 import static org.example.individualsapi.util.RequestBuilder.buildGetTokenRequestFormData;
 import static org.example.individualsapi.util.RequestBuilder.buildRefreshTokenRequestFormData;
 
-@Slf4j
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class KeycloakClient {
 
     private final KeycloakProperties keycloakProperties;
     private final WebClient webClient;
-
 
     public Mono<Void> addNewKeycloakUser(String email, String password, String serviceToken) {
         log.info("Adding new user {}", email);
