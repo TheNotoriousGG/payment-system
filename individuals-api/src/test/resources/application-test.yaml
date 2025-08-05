@@ -8,11 +8,12 @@ spring:
           issuer-uri: ${keycloak.url}/realms/${keycloak.realm_name}
 
 keycloak:
-  realm_name: test-realm
-  client_id: test-client
-  client_secret: test-client-secret
-  admin_username: test-admin
-  admin_password: test-admin-password
+  url: ${KEYCLOAK_URL:http://localhost:8080}
+  realm_name: individuals-test-realm
+  client_id: individuals-test-client
+  client_secret: individuals-super-secret
+  admin_username: admin
+  admin_password: admin
 
 server:
   port: 0

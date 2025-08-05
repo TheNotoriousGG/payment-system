@@ -1,4 +1,4 @@
-package org.example.individualsapi.service;
+package org.example.individualsapi.utils;
 
 import java.util.List;
 
@@ -10,8 +10,6 @@ public class TestConstants {
         public static final String USERNAME = "john.doe";
         public static final String USER_ID = "john-user-id";
         public static final String PASSWORD = "john123";
-        public static final String FIRST_NAME = "John";
-        public static final String LAST_NAME = "Doe";
     }
     
     public static final class DAVID {
@@ -44,6 +42,4 @@ public class TestConstants {
     public static final String INVALID_REFRESH_TOKEN_ERROR_MESSAGE = "Invalid refresh token";
     public static final String KEYCLOAK_UNAVAILABLE_ERROR_MESSAGE = "Keycloak unavailable";
     
-    // Context keys
-    public static final String USER_ID_CONTEXT_KEY = "userId";
 }

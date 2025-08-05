@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.mockito.Mockito.*;
-import static org.example.individualsapi.service.TestConstants.*;
+import static org.example.individualsapi.utils.TestConstants.*;
 
 @ExtendWith(MockitoExtension.class)
 class TokenServiceTest {

@@ -39,7 +39,7 @@ public class KeycloakClient {
         log.info("Request body {}", requestBody);
 
         return webClient.post()
-                .uri(keycloakProperties.getUserInfoEndpoint())
+                .uri(keycloakProperties.getUsersEndpoint())
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceToken)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .body(BodyInserters.fromValue(requestBody))

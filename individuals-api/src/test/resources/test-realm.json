@@ -1,25 +1,95 @@
 {
-  "realm": "test-realm",
+  "realm": "individuals-test-realm",
   "enabled": true,
-  "clients": [
-    {
-      "clientId": "test-client",
-      "secret": "test-secret",
-      "enabled": true,
-      "directAccessGrantsEnabled": true,
-      "publicClient": false
-    }
-  ],
   "users": [
     {
-      "username": "test-user",
+      "username": "admin",
       "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@example.com",
       "credentials": [
         {
           "type": "password",
-          "value": "password"
+          "value": "admin",
+          "temporary": false
         }
+      ],
+      "realmRoles": [
+        "admin",
+        "realm-admin"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ],
+        "account": [
+          "manage-account",
+          "manage-account-links",
+          "view-profile"
+        ]
+      }
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin"
+      },
+      {
+        "name": "realm-admin"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "individuals-test-client",
+      "enabled": true,
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "secret": "individuals-super-secret",
+      "redirectUris": [
+        "*"
+      ],
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "frontchannelLogout": false,
+      "attributes": {
+        "realm_client": "false"
+      },
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "service_account",
+        "acr",
+        "roles",
+        "profile",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "organization",
+        "offline_access",
+        "microprofile-jwt"
       ]
+    },
+    {
+      "clientId": "realm-management",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "authorizationServicesEnabled": true
     }
   ]
 }
