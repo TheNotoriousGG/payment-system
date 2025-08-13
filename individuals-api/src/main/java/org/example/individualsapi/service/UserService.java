@@ -47,13 +47,23 @@ public class UserService {
         log.info("Get auth user info");
 
         return tokenService.getServiceToken()
+                .doOnSuccess(token -> log.debug("Service token obtained successfully"))
+                .doOnError(error -> log.error("Failed to get service token: {}", error.getMessage(), error))
                 .flatMap(serviceToken ->
                         AuthContextUtil.getCurrentUserId()
+                                .doOnSuccess(userId -> log.debug("Current user ID extracted: {}", userId))
+                                .doOnError(error -> log.error("Failed to extract current user ID: {}", error.getMessage(), error))
                                 .flatMap(userId ->
                                         Mono.zip(
-                                                keycloakClient.getUserInfo(userId, serviceToken),
+                                                keycloakClient.getUserInfo(userId, serviceToken)
+                                                        .doOnSuccess(userInfo -> log.debug("User info retrieved successfully for user: {}", userId))
+                                                        .doOnError(error -> log.error("Failed to get user info for user {}: {}", userId, error.getMessage(), error)),
                                                 keycloakClient.getUserRoles(userId, serviceToken)
+                                                        .doOnSuccess(roles -> log.debug("User roles retrieved successfully for user: {}", userId))
+                                                        .doOnError(error -> log.error("Failed to get user roles for user {}: {}", userId, error.getMessage(), error))
                                         )
+                                        .doOnSuccess(tuple -> log.debug("Both user info and roles retrieved successfully for user: {}", userId))
+                                        .doOnError(error -> log.error("Failed to retrieve user info or roles for user {}: {}", userId, error.getMessage(), error))
                                 )
                                 .map(tuple -> {
                                     UserInfoResponse userInfoResponse = userMapper.toUserInfoResponse(tuple.getT1());
@@ -64,6 +74,6 @@ public class UserService {
                                     return userInfoResponse;
                                 })
                 ).doOnSuccess(_ -> log.info("Auth user info received"))
-                .doOnError(_ -> log.error("Error in try to get auth user info"));
+                .doOnError(error -> log.error("Error in try to get auth user info: {}", error.getMessage(), error));
     }
 }

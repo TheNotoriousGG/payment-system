@@ -1,16 +1,14 @@
 package org.example.individualsapi.it;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import org.example.individualsapi.model.dto.*;
-import org.example.individualsapi.service.KeycloakClient;
-import org.example.individualsapi.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -27,6 +25,7 @@ import static org.example.individualsapi.utils.TestConstants.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class AuthApiIntegrationTests {
 
     @Container
@@ -45,15 +44,6 @@ class AuthApiIntegrationTests {
     @Autowired
     private WebTestClient webTestClient;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private KeycloakClient keycloakClient;
-
-    @Autowired
-    private UserService userService;
-
     @BeforeEach
     void setUp() {
         webTestClient = webTestClient.mutate()
@@ -65,23 +55,16 @@ class AuthApiIntegrationTests {
     @DisplayName("Должен зарегистрировать нового пользователя в keycloak")
     void givenValidUserRegistrationRequest_whenPostAuthRegistration_thenReturnsTokenResponse() {
         // Given
-
         UserRegistrationRequest request = new UserRegistrationRequest()
                 .email(JOHN.EMAIL)
                 .password(JOHN.PASSWORD)
                 .confirmPassword(JOHN.PASSWORD);
 
         // When
-        var response = webTestClient
-                .post()
-                .uri("/v1/auth/registration")
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
-                .exchange();
-
+        var userRegistrationResponse = registerUser(request);
 
         // Then
-        response
+        userRegistrationResponse
                 .expectStatus().isCreated()
                 .expectBody(TokenResponse.class)
                 .consumeWith(result -> {
@@ -91,6 +74,49 @@ class AuthApiIntegrationTests {
                     assertThat(tokenResponse.getRefreshToken()).isNotNull();
                     assertThat(tokenResponse.getExpiresIn()).isPositive();
                     assertThat(tokenResponse.getRefreshExpiresIn()).isPositive();
+
+                    webTestClient
+                            .get()
+                            .uri("/v1/auth/me")
+                            .header("Authorization", "Bearer " + tokenResponse.getAccessToken())
+                            .exchange()
+                            .expectStatus().isOk()
+                            .expectBody(UserInfoResponse.class)
+                            .consumeWith(meResult -> {
+                                UserInfoResponse userInfo = meResult.getResponseBody();
+                                assertThat(userInfo).isNotNull();
+                                assertThat(userInfo.getEmail()).isEqualTo(JOHN.EMAIL);
+                            });
                 });
+    }
+
+    @Test
+    @DisplayName("Должен вернуть ошибку при попытке зарегистрировать существующего пользователя")
+    void givenInvalidUserRegistrationRequest_whenPostAuthRegistration_thenReturnsErrorResponse() {
+        //Given
+        UserRegistrationRequest request = new UserRegistrationRequest()
+                .email(JOHN.EMAIL)
+                .password(JOHN.PASSWORD)
+                .confirmPassword(JOHN.PASSWORD);
+
+        //When
+        var firstRegistrationResponse = registerUser(request);
+        var secondUserRegistrationResponse = registerUser(request);
+
+        //Then
+        firstRegistrationResponse.expectStatus().isCreated();
+        secondUserRegistrationResponse.expectStatus().is4xxClientError();
+
+        System.out.println();
+
+    }
+
+    private WebTestClient.ResponseSpec registerUser(UserRegistrationRequest userRegistrationRequest) {
+        return webTestClient
+                .post()
+                .uri("/v1/auth/registration")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(userRegistrationRequest)
+                .exchange();
     }
 }

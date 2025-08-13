@@ -4,10 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.individualsapi.config.KeycloakProperties;
-import org.example.individualsapi.model.KeycloakRoleMapping;
-import org.example.individualsapi.model.KeycloakRoleMappingResponse;
-import org.example.individualsapi.model.KeycloakUserRequest;
-import org.example.individualsapi.model.KeycloakUserResponse;
+import org.example.individualsapi.model.*;
 import org.example.individualsapi.model.dto.TokenResponse;
 import org.example.individualsapi.util.RequestBuilder;
 import org.springframework.http.HttpHeaders;
@@ -16,9 +13,12 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
-import java.util.List;
+import java.time.Duration;
+import java.util.*;
 
 import static org.example.individualsapi.util.ErrorHandlingUtil.keycloakHttpErrorMapper;
 import static org.example.individualsapi.util.RequestBuilder.buildGetTokenRequestFormData;
@@ -46,6 +46,8 @@ public class KeycloakClient {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(Void.class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1))
+                        .filter(throwable -> throwable instanceof WebClientRequestException))
                 .doOnSuccess(_ -> log.info("User {} successfully added", email))
                 .doOnError(throwable -> log.error("Error in try to add new user: {} -> {}", email, throwable.getMessage()));
     }
@@ -59,6 +61,8 @@ public class KeycloakClient {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(KeycloakRoleMappingResponse.class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1))
+                        .filter(throwable -> throwable instanceof WebClientRequestException))
                 .doOnSuccess(_ -> log.info("User roles successfully received from keycloak userId = {}", userId))
                 .doOnError(throwable -> log.error("Error in try to get user roles from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
     }
@@ -72,15 +76,30 @@ public class KeycloakClient {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(KeycloakUserResponse.class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1))
+                        .filter(throwable -> throwable instanceof WebClientRequestException))
                 .doOnSuccess(_ -> log.info("User info successfully received from keycloak userId =  {}", userId))
                 .doOnError(throwable -> log.error("Error in try to get user from keycloak userId = {}, error = {}", userId, throwable.getMessage()));
     }
 
     public List<String> extractClientRoles(KeycloakRoleMappingResponse roleMappings) {
-        return roleMappings.getClientMappings().get(keycloakProperties.getClientId())
-                .getMappings().stream()
+        if (roleMappings == null) {
+            return Collections.emptyList();
+        }
+
+        Map<String, KeycloakClientMapping> clientMappings = roleMappings.getClientMappings();
+        if (clientMappings == null) {
+            return Collections.emptyList();
+        }
+
+        KeycloakClientMapping clientMapping = clientMappings.get(keycloakProperties.getClientId());
+        return clientMapping != null && clientMapping.getMappings() != null
+                ? clientMapping.getMappings().stream()
+                .filter(Objects::nonNull)
                 .map(KeycloakRoleMapping::getName)
-                .toList();
+                .filter(Objects::nonNull)
+                .toList()
+                : Collections.emptyList();
     }
 
     public Mono<TokenResponse> authenticateUser(String username, String password) {
@@ -101,6 +120,8 @@ public class KeycloakClient {
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, keycloakHttpErrorMapper())
                 .bodyToMono(TokenResponse.class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1))
+                        .filter(throwable -> throwable instanceof WebClientRequestException))
                 .doOnSuccess(token -> {
                     log.info("Token for user {} successfully received", username);
                     log.debug("Token response: access_token length={}, refresh_token length={}, expires_in={}",

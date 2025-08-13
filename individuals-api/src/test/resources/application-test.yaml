@@ -21,4 +21,9 @@ server:
 logging:
   level:
     org.example.individualsapi: DEBUG
+    org.example.individualsapi.service: DEBUG
+    org.example.individualsapi.util: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+    reactor.netty: DEBUG
     org.testcontainers: INFO
