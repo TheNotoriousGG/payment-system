@@ -14,6 +14,11 @@ keycloak:
   client_secret: individuals-super-secret
   admin_username: admin
   admin_password: admin
+  # Настройки для тестового контейнера
+  testcontainers:
+    image: quay.io/keycloak/keycloak:22.0.5
+    realm_import_file: /test-realm.json
+    port: 8080
 
 server:
   port: 0

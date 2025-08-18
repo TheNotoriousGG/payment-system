@@ -30,6 +30,31 @@
           "view-profile"
         ]
       }
+    },
+    {
+      "username": "john.doe",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john.doe@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "john123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ],
+      "clientRoles": {
+        "account": [
+          "manage-account",
+          "manage-account-links",
+          "view-profile"
+        ]
+      }
     }
   ],
   "roles": {
@@ -39,6 +64,9 @@
       },
       {
         "name": "realm-admin"
+      },
+      {
+        "name": "user"
       }
     ]
   },
