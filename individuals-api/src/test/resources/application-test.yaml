@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: individuals-api-test
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${keycloak.url}/realms/${keycloak.realm_name}
+
+keycloak:
+  url: ${KEYCLOAK_URL:http://localhost:8080}
+  realm_name: individuals-test-realm
+  client_id: individuals-test-client
+  client_secret: individuals-super-secret
+  admin_username: admin
+  admin_password: admin
+  # Настройки для тестового контейнера
+  testcontainers:
+    image: quay.io/keycloak/keycloak:22.0.5
+    realm_import_file: /test-realm.json
+    port: 8080
+
+server:
+  port: 0
+
+logging:
+  level:
+    org.example.individualsapi: DEBUG
+    org.example.individualsapi.service: DEBUG
+    org.example.individualsapi.util: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+    reactor.netty: DEBUG
+    org.testcontainers: INFO

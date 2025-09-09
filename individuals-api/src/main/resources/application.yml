@@ -1,3 +1,53 @@
 spring:
   application:
     name: individuals-api
+  security:
+      oauth2:
+        client:
+          registration:
+            keycloak:
+              provider: keycloak
+              client-id: ${keycloak.client_id}
+              client-secret: ${keycloak.client_secret}
+              client-name: ${keycloak.client_id}
+              authorization-grant-type: authorization_code
+              scope: openid, profile, email
+        resourceserver:
+          jwt:
+            issuer-uri: ${keycloak.url}/realms/${keycloak.realm_name}
+
+logging:
+  level:
+    org.example.individualsapi.service: DEBUG
+    org.example.individualsapi.util: DEBUG
+
+keycloak:
+  url: ${KEYCLOAK_URL:http://localhost:8080}
+  realm_name: ${KEYCLOAK_REALM:individuals}
+  client_id: ${KEYCLOAK_CLIENT_ID:individuals-api}
+  client_secret: ${KEYCLOAK_CLIENT_SECRET:ZmkJaSPWHNeGNnpHoCJ5lF0x1nZ4OAAy}
+  admin_username: ${KEYCLOAK_ADMIN_USERNAME:geo}
+  admin_password: ${KEYCLOAK_ADMIN_PASSWORD:geo}
+
+server:
+  port: 8081
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /openapi/individuals-api.yaml
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
