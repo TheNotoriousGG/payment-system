@@ -33,6 +33,7 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("org.hibernate:hibernate-envers:7.1.1.Final")
 }
 
 tasks.withType<Test> {

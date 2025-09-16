@@ -1,0 +1,21 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(dev, "Person Service SDK", "Клиент, взаимодействующий с Person service")
+
+System_Boundary(indSystem, "Person Service System") {
+    Container(persSrv, "Person-service", "Spring Boot WebFlux", "Сервис работы с пользователями")
+    Container(prometheus, "Prometheus", "Monitoring", "Сбор метрик с сервисов")
+    Container(loki, "Loki", "Logging", "Сбор логов из stdout")
+    Container(grafana, "Grafana", "Visualization", "Отображение логов и метрик в дэшбордах")
+    Container(postgres, "Payment-system Postgres", "PostgreSQL", "Хранение данных пользователей")
+}
+
+Rel(persSrv, postgres, "Данные пользователей")
+Rel(dev, persSrv, "HTTP запросы (регистрация, get by id, get by email)", "JSON/REST")
+Rel(persSrv, loki, "Отправка логов", "stdout -> Docker -> Loki")
+Rel(grafana, loki, "Чтение логов")
+Rel(grafana, prometheus, "Чтение метрик")
+Rel(persSrv, prometheus, "Отправка метрик", "Micrometer")
+@enduml
+
