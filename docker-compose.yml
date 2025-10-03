@@ -1,24 +1,105 @@
 services:
+  person-postgres:
+    image: postgres:17
+    container_name: person-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: person
+    volumes:
+      - ./infra/databases/person:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - individuals-network
+
+  keycloak-postgres:
+    image: postgres:17
+    container_name: keycloak-postgres
+    environment:
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+      POSTGRES_DB: keycloak
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready, -U keycloak" ]
+      interval: 10s
+      timeout: 5s
+      retries: 20 
+
+  person-postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: keycloak-postgres-exporter
+    depends_on:
+      person-postgres:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_NAME: postgresql://keycloak:keycloak@keycloak-postgres:5432/postgres?sslmode=disable
+    ports:
+        - "9188:9187"
+
+  keycloak-postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: keycloak-postgres-exporter
+    depends_on:
+      person-postgres:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_NAME: postgresql://keycloak:keycloak@person-postgres:5432/keycloak?sslmode=disable
+    ports:
+      - "9189:9187"
+
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    container_name: keycloak
-    command: start-dev --import-realm
+    image: quay.io/keycloak/keycloak:26.2
+    container_name: individuals-keycloak
+    command: start-dev --import-realm --metrics-enabled=true
     ports:
       - "8080:8080"
       - "9000:9000"
     environment:
+      JAVA_OPTS: -Dkeycloak.migration.usersExportStrategy=REALM_FILE
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_DB: dev-mem
-      KC_HEALTH_ENABLED: true
-      KC_METRICS_ENABLED: true
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
     volumes:
-      - ./individuals-api/resources/realm-config.json:/opt/keycloak/data/import/realm-config.json:ro
+      - ./infra/keycloak/realm-config.json:/opt/keycloak/data/import/realm-config.json
+    depends_on:
+      keycloak-postgres:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 && exit 0 || exit 1"]
+      test: ["CMD-SHELL", "curl -faS http://localhost:9000/health/ready || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 30
+    networks:
+      - individuals-network
+
+  nexus:
+    image: sonatype/nexus3:3.76.0
+    container_name: nexus
+    ports:
+      - "8082:8081"
+    environment:
+      NEXUS_SECURITY_INITIAL_PASSWORD: admin
+      NEXUS_SECURITY_RANDOMPASSWORD: false
+    volumes:
+      - ./nexus/data:/nexus-data
+    healthcheck:
+      test: ["CMD_CHECK", "curl", "-f", "http://localhost:8081/service/rest/v1/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - individuals-network
 
@@ -46,7 +127,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:9090/-/healthy"]
       interval: 10s
@@ -62,7 +143,7 @@ services:
       - "3100:3100"
     command: -config.file=/etc/loki.yaml
     volumes:
-      - ./loki/loki-config.yaml:/etc/loki.yaml
+      - ./infra/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3100/ready"]
       interval: 10s
@@ -70,6 +151,52 @@ services:
       retries: 5
     networks:
       - individuals-network
+    
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: tempo
+    command: [ "-config.file=/etc/tempo/tempo.yaml" ]
+    volumes:
+      - ./infra/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3200/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+        - individuals-network
+    
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
+    user: root
+    ports:
+      - "9080:9080"
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./infra/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker,sock:/var/run/docker.sock
+      - /var/log:/var/log:ro
+    environment:
+      GRAFANA_LOKI_URL: http://loki:3100/loki/api/v1/push
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:9080
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:9080/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - individuals-network
+
 
   grafana:
     image: grafana/grafana:10.3.1
@@ -81,19 +208,35 @@ services:
         condition: service_healthy
       loki:
         condition: service_healthy
+      tempo:
+        condition: service_healthy
+      alloy:
+        condition: service_healthy
     environment:
+      GF_AUTH_ANONYMOUS_ENABLED: true
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_METRICS_ENABLED: "true"
     volumes:
-      - ./grafana/provisioning:/etc/grafana/provisioning
-      - ./grafana/dashboards:/etc/grafana/dashboards
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+      - ./infra/grafana/dashboards:/etc/grafana/dashboards
+      - nexus-data:/nexus-data
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
     networks:
       - individuals-network
 networks:
   individuals-network:
     driver: bridge
+
+volumes:
+  artifacts:
+  tempo_data:
+  nexus-data:
+  loki_data:
+  loki_chunks:
+  loki_index:
+  loki_rules:
