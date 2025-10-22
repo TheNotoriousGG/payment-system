@@ -1,5 +1,4 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
-import org.gradle.api.publish.maven.MavenPublication
 
 val versions = mapOf(
     "mapstructVersion" to "1.5.5.Final",
@@ -106,93 +105,37 @@ tasks.withType<Test> {
 ──────────────────────────────────────────────────────
 */
 
-val openApiDir = file("${rootDir}/openapi")
+val buildDirPath: String = layout.buildDirectory.get().asFile.path
+val outputDirPath: String = "${buildDirPath}/generated/openapi"
+val genSrcDirPath: String = "${outputDirPath}/src/main/java"
 
-val foundSpecifications = openApiDir.listFiles { f -> f.extension in listOf("yaml","yml") } ?: emptyArray()
-logger.lifecycle("Found ${foundSpecifications.size} specifications: " + foundSpecifications.joinToString { it.name })
-
-
-foundSpecifications.forEach { specFile ->
-    val ourDir = getAbsolutePath(specFile.nameWithoutExtension)
-    val packageName = defineJavaPackageName(specFile.nameWithoutExtension)
-
-    val taskName = buildGenerateApiTaskName(specFile.nameWithoutExtension)
-    logger.lifecycle("Register task ${taskName} from ${ourDir.get()}")
-    val basePackage = "org.example.${packageName}"
-
-    tasks.register(taskName, GenerateTask::class) {
-        generatorName.set("spring")
-        inputSpec.set(specFile.absolutePath)
-        outputDir.set(ourDir)
-
-        configOptions.set(
-            mapOf(
-                "library" to "spring-cloud",
-                "skipDefaultInterface" to "true",
-                "useBeanValidation" to "true",
-                "openApiNullable" to "false",
-                "useFeignClientUrl" to "true",
-                "useTags" to "true",
-                "apiPackage" to "${basePackage}.api",
-                "modelPackage" to "${basePackage}.dto",
-                "configPackage" to "${basePackage}.config"
-            )
+tasks.register<GenerateTask>("generateApi") {
+    generatorName.set("spring")
+    inputSpec.set("$rootDir/openapi/person-api.yaml")
+    outputDir.set(outputDirPath)
+    configOptions.set(
+        mapOf(
+            "library" to "spring-cloud",
+            "skipDefaultInterface" to "true",
+            "useBeanValidation" to "true",
+            "useFeignClientUrl" to "true",
+            "openApiNullable" to "false",
+            "useTags" to "true",
+            "apiPackage" to "${project.group}.personapi.api",
+            "modelPackage" to "${project.group}.personapi.dto",
+            "configPackage" to "${project.group}.personapi.config"
         )
-
-        doFirst {
-            logger.lifecycle("$taskName: starting generation from ${specFile.name}")
-        }
-    }
+    )
 }
 
-fun getAbsolutePath(nameWithoutExtension: String): Provider<String> {
-    return layout.buildDirectory
-        .dir("generated-sources/openapi/${nameWithoutExtension}")
-        .map { it.asFile.absolutePath }
-}
-
-fun defineJavaPackageName(name: String): String {
-    val beforeDash = name.substringBefore('-')
-    val match = Regex("^[a-z]+]").find(beforeDash)
-    return match?.value ?: beforeDash.lowercase()
-}
-
-fun buildGenerateApiTaskName(name: String): String {
-    return buildTaskName("generate",name)
-}
-
-fun buildJarTaskName(name: String): String {
-    return buildTaskName("jar", name)
-}
-
-fun buildTaskName(taskPrefix: String, name: String): String {
-    val prepareName = name
-        .split(Regex("[^A-Za-z0-9]"))
-        .filter { it.isNotBlank() }
-        .joinToString("") { it.replaceFirstChar(Char::uppercase)}
-
-    return "${taskPrefix}-${prepareName}"
-}
-
-val withoutExtensionNames = foundSpecifications.map { it.nameWithoutExtension }
-
-sourceSets.named("main") {
-    withoutExtensionNames.forEach { name ->
-        java.srcDir(layout.buildDirectory.dir("generated-sources/openapi/$name/src/main/java"))
-    }
-}
-
-tasks.register("generateAllOpenApi") {
-    foundSpecifications.forEach { specFile ->
-        dependsOn(buildGenerateApiTaskName(specFile.nameWithoutExtension))
-    }
-    doLast {
-        logger.lifecycle("generateAllOpenApi: all specifications has been generated")
+sourceSets {
+    main {
+        java.srcDir(genSrcDirPath)
     }
 }
 
 tasks.named("compileJava") {
-    dependsOn("generateAllOpenApi")
+    dependsOn("generateApi")
 }
 
 /*
@@ -201,45 +144,19 @@ tasks.named("compileJava") {
 ──────────────────────────────────────────────────────
 */
 
-tasks.named("build") {
-    dependsOn(generatedJars)
+val personApiSdkArtifactName = "person-api-sdk"
+
+val generatedSourceSet = sourceSets.create("generated") {
+    java.srcDir(genSrcDirPath)
+    compileClasspath += sourceSets["main"].output + sourceSets["main"].compileClasspath
 }
 
-val generatedJars = foundSpecifications.map { specFile ->
-    val name = specFile.nameWithoutExtension
-    val generateTaskName = buildGenerateApiTaskName(name)
-    val jarTaskName = buildJarTaskName(name)
-    val outDirProvider = getAbsolutePath(name)
-    val generateSrcDir = outDirProvider.map { File(it).resolve("src/main/java") }
-
-    val sourcesSetName = name
-
-    val sourceSet = sourceSets.create(sourcesSetName) {
-        java.srcDir(generateSrcDir)
-        compileClasspath += sourceSets["main"].compileClasspath
-    }
-
-    val compileTaskName = "compile${sourcesSetName.replaceFirstChar(Char::uppercase)}Java"
-    tasks.register<JavaCompile>(compileTaskName) {
-        source = sourceSet.java
-        classpath = sourceSet.compileClasspath
-        destinationDirectory.set(layout.buildDirectory.dir("classes/${sourcesSetName}"))
-        dependsOn(generateTaskName)
-    }
-
-    tasks.register<Jar>(jarTaskName) {
-        group = "build"
-        archiveBaseName.set(name)
-        destinationDirectory.set(layout.buildDirectory.dir("libs"))
-
-        val classOutput = layout.buildDirectory.dir("classes/${sourcesSetName}")
-        from(classOutput)
-        dependsOn(compileTaskName)
-
-        doFirst {
-            println("Building JAR for $name from compiled classes in ${classOutput.get().asFile}")
-        }
-    }
+tasks.register<Jar>("generateSdkJar") {
+    group = "build"
+    archiveBaseName.set(personApiSdkArtifactName)
+    destinationDirectory.set(layout.buildDirectory.dir("libs"))
+    from(generatedSourceSet.output)
+    dependsOn("generateApi")
 }
 
 /*
@@ -273,30 +190,27 @@ if (nexusUrl.isNullOrBlank() || nexusUser.isNullOrBlank() || nexusPassword.isNul
 
 publishing {
     publications {
-        foundSpecifications.forEach { specFile ->
-            val name = specFile.nameWithoutExtension
-            val jarBaseName = name
-            var jarFile = file("build/libs")
-                .listFiles()
-                ?.firstOrNull { it.name.contains(name) && (it.extension == "jar" || it.extension == "zip") }
+        var jarFile = file("build/libs")
+            .listFiles()
+            ?.firstOrNull { it.name.contains(personApiSdkArtifactName) && (it.extension == "jar" || it.extension == "zip") }
 
-            if (jarFile != null) {
-                logger.lifecycle("publishing: ${jarFile.name}")
+        if (jarFile != null) {
+            logger.lifecycle("publishing: ${jarFile.name}")
 
-                create<MavenPublication>("publish${name.replaceFirstChar(Char::uppercase)}Jar") {
-                    artifact(jarFile)
-                    groupId = "net.proselyte"
-                    artifactId = jarBaseName
-                    version = "1.0.0-SNAPSHOT"
+            create<MavenPublication>("publish${name.replaceFirstChar(Char::uppercase)}Jar") {
+                artifact(jarFile)
+                groupId = "${project.group}"
+                artifactId = personApiSdkArtifactName
+                version = "1.0.0-SNAPSHOT"
 
-                    pom {
-                        this.name.set("Generated API $jarBaseName")
-                        this.description.set("OpenAPI generated code for $jarBaseName")
-                    }
+                pom {
+                    this.name.set("Generated API $personApiSdkArtifactName")
+                    this.description.set("OpenAPI generated code for $personApiSdkArtifactName")
                 }
             }
         }
     }
+
 
     repositories {
         maven {

@@ -1,10 +1,11 @@
 package org.example.personservice.mapper;
 
 import lombok.Setter;
-import org.example.person.dto.AddressDto;
-import org.example.person.dto.IndividualWriteDto;
+import org.example.personapi.dto.AddressDto;
+import org.example.personapi.dto.IndividualWriteDto;
 import org.example.personservice.entity.Address;
 import org.example.personservice.entity.Country;
+import org.example.personservice.entity.User;
 import org.example.personservice.exception.PersonException;
 import org.example.personservice.repository.CountryRepository;
 import org.example.personservice.util.DateTimeUtil;
@@ -13,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 
-@Mapper(componentModel = SPRING, injectionStrategy = InjectionStrategy.CONSTRUCTOR)
+@Mapper(componentModel = SPRING, injectionStrategy = InjectionStrategy.CONSTRUCTOR,unmappedTargetPolicy = ReportingPolicy.IGNORE)
 @Setter(onMethod_ = @Autowired)
 public abstract class AddressMapper {
 

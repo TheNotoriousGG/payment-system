@@ -2,16 +2,11 @@ package org.example.personservice.mapper;
 
 
 import lombok.Setter;
-
-import org.example.person.dto.IndividualWriteDto;
+import org.example.personapi.dto.IndividualWriteDto;
 import org.example.personservice.entity.Individual;
 import org.example.personservice.entity.User;
 import org.example.personservice.util.DateTimeUtil;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.Named;
+import org.mapstruct.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -21,6 +16,7 @@ import static org.mapstruct.MappingConstants.ComponentModel.SPRING;
 @Mapper(
         componentModel = SPRING,
         injectionStrategy = CONSTRUCTOR,
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
         uses = {
                 AddressMapper.class
         }

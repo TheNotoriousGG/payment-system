@@ -2,8 +2,8 @@ package org.example.personservice.mapper;
 
 
 import lombok.Setter;
-import org.example.person.dto.IndividualDto;
-import org.example.person.dto.IndividualWriteDto;
+import org.example.personapi.dto.IndividualDto;
+import org.example.personapi.dto.IndividualWriteDto;
 import org.example.personservice.entity.Individual;
 import org.example.personservice.util.DateTimeUtil;
 import org.mapstruct.*;
@@ -19,6 +19,7 @@ import static org.springframework.util.CollectionUtils.isEmpty;
 
 @Mapper(
         componentModel = SPRING,
+        unmappedTargetPolicy = ReportingPolicy.IGNORE,
         injectionStrategy = CONSTRUCTOR,
         uses = {
                 UserMapper.class,
@@ -33,7 +34,7 @@ public abstract class IndividualMapper {
     @Mapping(target = "active", constant = "true")
     @Mapping(target = "created", expression = "java(dateTimeUtil.now())")
     @Mapping(target = "updated", expression = "java(dateTimeUtil.now())")
-    @Mapping(target = "user", source = ".", qualifiedByName = "toUser")
+    @Mapping(target = "user", source = "dto", qualifiedByName = "toUser")
     public abstract Individual to(IndividualWriteDto dto);
 
     @Mapping(target = "firstName", source = "user.firstName")

@@ -1,5 +1,6 @@
 FROM gradle:8.14.2-jdk24 AS build
-ARG NEXUS_URL=http://host.docker.internal:8081/repository/maven-snapshots
+
+ARG NEXUS_URL=http://localhost:8082/repository/maven-snapshots
 ARG NEXUS_USERNAME=admin
 ARG NEXUS_PASSWORD=admin
 
@@ -11,10 +12,10 @@ WORKDIR /home/gradle/project
 
 COPY build.gradle.kts .
 COPY settings.gradle.kts .
-COPY src ./src
 COPY openapi ./openapi
+COPY src ./src
 
-RUN gradle --no-daemon clean build -x test
+RUN gradle --no-daemon build -x test
 RUN gradle publish --info
 
 FROM eclipse-temurin:24-jre
@@ -23,7 +24,8 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY --from=build /home/gradle/project/build/libs/*.jar app.jar
+COPY --from=build /home/gradle/project/build/libs/*.jar person-service.jar
 
 EXPOSE 8092
-CMD ["java", "-jar", "app.jar"]
+
+CMD ["java","-jar","person-service.jar"]

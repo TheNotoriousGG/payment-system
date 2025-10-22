@@ -28,19 +28,21 @@ services:
     ports:
       - "5433:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready, -U keycloak" ]
+      test: [ "CMD-SHELL", "pg_isready -U keycloak" ]
       interval: 10s
       timeout: 5s
       retries: 20 
+    networks:
+     - individuals-network
 
   person-postgres-exporter:
     image: prometheuscommunity/postgres-exporter:latest
-    container_name: keycloak-postgres-exporter
+    container_name: person-postgres-exporter
     depends_on:
       person-postgres:
         condition: service_healthy
     environment:
-      DATA_SOURCE_NAME: postgresql://keycloak:keycloak@keycloak-postgres:5432/postgres?sslmode=disable
+      DATA_SOURCE_NAME: postgresql://postgres:postgres@person-postgres:5432/postgres?sslmode=disable
     ports:
         - "9188:9187"
 
@@ -48,10 +50,10 @@ services:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: keycloak-postgres-exporter
     depends_on:
-      person-postgres:
+      keycloak-postgres:
         condition: service_healthy
     environment:
-      DATA_SOURCE_NAME: postgresql://keycloak:keycloak@person-postgres:5432/keycloak?sslmode=disable
+      DATA_SOURCE_NAME: postgresql://keycloak:keycloak@keycloak-postgres:5432/keycloak?sslmode=disable
     ports:
       - "9189:9187"
 
@@ -78,7 +80,7 @@ services:
       keycloak-postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -faS http://localhost:9000/health/ready || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/health/ready || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -94,9 +96,9 @@ services:
       NEXUS_SECURITY_INITIAL_PASSWORD: admin
       NEXUS_SECURITY_RANDOMPASSWORD: false
     volumes:
-      - ./nexus/data:/nexus-data
+      - nexus-data:/nexus-data
     healthcheck:
-      test: ["CMD_CHECK", "curl", "-f", "http://localhost:8081/service/rest/v1/status"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/service/rest/v1/status"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -115,6 +117,25 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - individuals-network
+
+  person-service:
+    build: ./person-service
+    container_name: person-service
+    ports: 
+      - "8092:8092"
+    environment:
+      NEXUS_URL: http://nexus:8082/repository/maven-snapshots
+      NEXUS_USERNAME: admin
+      NEXUS_PASSWORD: admin
+      PERSON_SERVICE_DB_USERNAME: postgres
+      PERSON_SERVICE_DB_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD","curl","-f","http://localhost:8092/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -145,7 +166,7 @@ services:
     volumes:
       - ./infra/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3100/ready"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -158,7 +179,7 @@ services:
     command: [ "-config.file=/etc/tempo/tempo.yaml" ]
     volumes:
       - ./infra/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
-      - tempo-data:/var/tempo
+      - tempo_data:/var/tempo
     ports:
       - "3200:3200"
     healthcheck:
@@ -180,7 +201,7 @@ services:
     volumes:
       - ./infra/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /var/run/docker,sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
       - /var/log:/var/log:ro
     environment:
       GRAFANA_LOKI_URL: http://loki:3100/loki/api/v1/push
@@ -189,6 +210,7 @@ services:
       - --server.http.listen-addr=0.0.0.0:9080
       - --storage.path=/var/lib/alloy/data
       - /etc/alloy/config.alloy
+      - -config.file=/etc/loki/loki-config.yaml
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:9080/ready"]
       interval: 10s

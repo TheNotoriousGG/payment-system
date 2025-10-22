@@ -1,11 +1,11 @@
 package org.example.personservice.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.person.api.PersonApi;
-import org.example.person.dto.IndividualDto;
-import org.example.person.dto.IndividualPageDto;
-import org.example.person.dto.IndividualWriteDto;
-import org.example.person.dto.IndividualWriteResponseDto;
+import org.example.personapi.api.PersonServiceApi;
+import org.example.personapi.dto.IndividualDto;
+import org.example.personapi.dto.IndividualPageDto;
+import org.example.personapi.dto.IndividualWriteDto;
+import org.example.personapi.dto.IndividualWriteResponseDto;
 import org.example.personservice.service.IndividualService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-public class IndividualRestControllerV1 implements PersonApi {
+public class IndividualRestControllerV1 implements PersonServiceApi {
 
     private final IndividualService individualService;
 
