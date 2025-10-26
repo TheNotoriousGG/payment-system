@@ -3,6 +3,7 @@ package org.example.personservice.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+@AuditTable(schema = "person_aud", value = "individuals_aud")
 @Setter
 @Getter
 @Entity

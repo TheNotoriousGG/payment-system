@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 
@@ -12,6 +13,7 @@ import javax.validation.constraints.Size;
 import java.time.Instant;
 
 @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+@AuditTable(schema = "person_aud", value = "countries_aud")
 @NotNull
 @Setter
 @Getter

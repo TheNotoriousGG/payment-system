@@ -2,7 +2,7 @@ DOCKER_COMPOSE = docker compose
 NEXUS_URL = http://localhost:8082
 INFRA_SERVICES ?= nexus keycloak person-postgres prometheus grafana tempo loki
 
-all: up build-artifacts start
+all: nexus build-person-service build-individuals-api start infra
 
 ifeq ($(OS),Windows_NT)
 WAIT_CMD = powershell -Command "while ($$true) { \
@@ -21,14 +21,17 @@ echo 'Nexus not ready, sleeping...'; sleep 5; \
 done
 endif
 
-up:
+nexus:
 	$(DOCKER_COMPOSE) up -d nexus
 	@echo "Waiting for Nexus to be healthy..."
 	@$(WAIT_CMD)
 	@echo "Nexus is healthy!"
 
-build-artifacts:
-	@$(DOCKER_COMPOSE) build person-service --no-cache
+build-person-service:
+	@$(DOCKER_COMPOSE) build person-service --no-cache --parallel
+
+build-individuals-api:
+	@$(DOCKER_COMPOSE) build individuals-api --no-cache --parallel
 
 start:
 	$(DOCKER_COMPOSE) up -d
@@ -65,7 +68,6 @@ help:
 	@echo "Available commands:"
 	@echo "  make all           - Build everything and start all services"
 	@echo "  make up            - Start Nexus and wait for it to be ready"
-	@echo "  make build-artifacts - Build and publish person-service SDK, build individuals-api"
 	@echo "  make start         - Start all services"
 	@echo "  make stop          - Stop all services"
 	@echo "  make clean         - Stop and remove containers and volumes"

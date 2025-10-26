@@ -175,6 +175,10 @@ val nexusUrl = System.getenv("NEXUS_URL") ?: System.getProperty("NEXUS_URL")
 val nexusUser = System.getenv("NEXUS_USERNAME") ?: System.getProperty("NEXUS_USERNAME")
 val nexusPassword = System.getenv("NEXUS_PASSWORD") ?: System.getProperty("NEXUS_PASSWORD")
 
+logger.lifecycle("Gradle nexusUrl = ${nexusUrl}")
+logger.lifecycle("Gradle nexusUser = ${nexusUser}")
+logger.lifecycle("Gradle nexusPassword = ${nexusPassword}")
+
 if (nexusUrl.isNullOrBlank() || nexusUser.isNullOrBlank() || nexusPassword.isNullOrBlank()) {
     throw GradleException(
         "NEXUS details are not set. Create a .env file with correct properties: " +

@@ -4,10 +4,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 
 @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+@AuditTable(schema = "person_aud", value = "users_aud")
 @Setter
 @Getter
 @Entity

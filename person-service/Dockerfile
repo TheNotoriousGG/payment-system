@@ -1,8 +1,8 @@
 FROM gradle:8.14.2-jdk24 AS build
 
-ARG NEXUS_URL=http://localhost:8082/repository/maven-snapshots
-ARG NEXUS_USERNAME=admin
-ARG NEXUS_PASSWORD=admin
+ARG NEXUS_URL
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
 
 ENV NEXUS_URL=${NEXUS_URL}
 ENV NEXUS_USERNAME=${NEXUS_USERNAME}
@@ -10,8 +10,10 @@ ENV NEXUS_PASSWORD=${NEXUS_PASSWORD}
 
 WORKDIR /home/gradle/project
 
-COPY build.gradle.kts .
-COPY settings.gradle.kts .
+COPY build.gradle.kts settings.gradle.kts ./
+
+RUN gradle dependencies --no-daemon || true
+
 COPY openapi ./openapi
 COPY src ./src
 

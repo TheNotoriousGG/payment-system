@@ -80,7 +80,7 @@ services:
       keycloak-postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/health/ready || exit 1"]
+      test: ["CMD-SHELL", "timeout 1 bash -c '</dev/tcp/localhost/9000' && echo 'Keycloak is ready'"]
       interval: 10s
       timeout: 5s
       retries: 30
@@ -88,7 +88,7 @@ services:
       - individuals-network
 
   nexus:
-    image: sonatype/nexus3:3.76.0
+    image: sonatype/nexus3:3.85.0-alpine
     container_name: nexus
     ports:
       - "8082:8081"
@@ -106,7 +106,12 @@ services:
       - individuals-network
 
   individuals-api:
-    build: ./individuals-api
+    build:
+      context: ./individuals-api
+      args:
+        NEXUS_URL: http://nexus:8082/repository/maven-snapshots
+        NEXUS_USERNAME: admin
+        NEXUS_PASSWORD: admin
     container_name: individuals-api
     ports:
       - "8081:8081"
@@ -124,16 +129,23 @@ services:
       - individuals-network
 
   person-service:
-    build: ./person-service
+    build: 
+      context: ./person-service
+      args:
+        NEXUS_URL: http://nexus:8082/repository/maven-snapshots
+        NEXUS_USERNAME: admin
+        NEXUS_PASSWORD: admin
     container_name: person-service
     ports: 
       - "8092:8092"
     environment:
-      NEXUS_URL: http://nexus:8082/repository/maven-snapshots
-      NEXUS_USERNAME: admin
-      NEXUS_PASSWORD: admin
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      PERSON_SERVICE_DB_URL: jdbc:postgresql://person-postgres:5432/person
       PERSON_SERVICE_DB_USERNAME: postgres
       PERSON_SERVICE_DB_PASSWORD: postgres
+    depends_on:
+      person-postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD","curl","-f","http://localhost:8092/actuator/health"]
       interval: 10s
@@ -158,13 +170,13 @@ services:
       - individuals-network
 
   loki:
-    image: grafana/loki:2.9.2
+    image: grafana/loki:3.5
     container_name: loki
     ports:
       - "3100:3100"
-    command: -config.file=/etc/loki.yaml
+    command: -config.file=/etc/loki/loki.yaml
     volumes:
-      - ./infra/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - ./infra/loki/loki-config.yaml:/etc/loki/loki.yaml:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3100/ready"]
       interval: 10s
@@ -191,7 +203,7 @@ services:
         - individuals-network
     
   alloy:
-    image: grafana/alloy:latest
+    build: ./infra/alloy
     container_name: alloy
     user: root
     ports:
@@ -210,9 +222,8 @@ services:
       - --server.http.listen-addr=0.0.0.0:9080
       - --storage.path=/var/lib/alloy/data
       - /etc/alloy/config.alloy
-      - -config.file=/etc/loki/loki-config.yaml
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:9080/ready"]
+      test: ["CMD", "curl", "-f", "http://localhost:9080/-/healthy"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -241,7 +252,7 @@ services:
       GF_METRICS_ENABLED: "true"
     volumes:
       - ./infra/grafana/provisioning:/etc/grafana/provisioning
-      - ./infra/grafana/dashboards:/etc/grafana/dashboards
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards
       - nexus-data:/nexus-data
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
@@ -250,6 +261,7 @@ services:
       retries: 10
     networks:
       - individuals-network
+
 networks:
   individuals-network:
     driver: bridge

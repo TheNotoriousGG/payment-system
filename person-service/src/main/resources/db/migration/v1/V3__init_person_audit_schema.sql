@@ -1,31 +1,31 @@
-CREATE TABLE person_history.revinfo
+CREATE TABLE person_aud.revinfo
 (
     rev       BIGSERIAL PRIMARY KEY,
     revtmstmp BIGINT
 );
 
-CREATE TABLE person_history.countries_history
+CREATE TABLE person_aud.countries_aud
 (
     id            INTEGER                     NOT NULL,
-    revision      BIGINT                      NOT NULL,
-    revision_type SMALLINT                    NOT NULL,
+    rev      BIGINT                      NOT NULL,
+    revtype SMALLINT                    NOT NULL,
     active        BOOLEAN                     NOT NULL DEFAULT TRUE,
     created       TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
     updated       TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
     name          VARCHAR(128)                NOT NULL,
     code          VARCHAR(3)                  NOT NULL,
 
-    CONSTRAINT pk_counties_history PRIMARY KEY (id, revision),
-    CONSTRAINT fk_countries_history_rev FOREIGN KEY (revision) REFERENCES person_history.revinfo (rev)
+    CONSTRAINT pk_counties_aud PRIMARY KEY (id, rev),
+    CONSTRAINT fk_countries_aud_rev FOREIGN KEY (rev) REFERENCES person_aud.revinfo (rev)
 );
 
-CREATE INDEX IF NOT EXISTS idx_countries_history_revision ON person_history.countries_history (revision);
+CREATE INDEX IF NOT EXISTS idx_countries_aud_rev ON person_aud.countries_aud (rev);
 
-CREATE TABLE person_history.addresses_history
+CREATE TABLE person_aud.addresses_aud
 (
     id            UUID                        NOT NULL,
-    revision      BIGINT                      NOT NULL,
-    revision_type SMALLINT                    NOT NULL,
+    rev      BIGINT                      NOT NULL,
+    revtype SMALLINT                    NOT NULL,
     active        BOOLEAN                     NOT NULL DEFAULT TRUE,
     created       TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
     updated       TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
@@ -34,18 +34,18 @@ CREATE TABLE person_history.addresses_history
     zip_code      VARCHAR(32)                 NOT NULL,
     city          VARCHAR(128)                NOT NULL,
 
-    CONSTRAINT pk_addresses_history PRIMARY KEY (id, revision),
-    CONSTRAINT fk_addresses_history_rev FOREIGN KEY (revision) REFERENCES person_history.revinfo (rev)
+    CONSTRAINT pk_addresses_aud PRIMARY KEY (id, rev),
+    CONSTRAINT fk_addresses_aud_rev FOREIGN KEY (rev) REFERENCES person_aud.revinfo (rev)
 );
 
-CREATE INDEX IF NOT EXISTS idx_addresses_history_revision ON person_history.addresses_history (revision);
+CREATE INDEX IF NOT EXISTS idx_addresses_aud_rev ON person_aud.addresses_aud (rev);
 
 
-CREATE TABLE person_history.users_history
+CREATE TABLE person_aud.users_aud
 (
     id            UUID                        NOT NULL,
-    revision      BIGINT                      NOT NULL,
-    revision_type SMALLINT                    NOT NULL,
+    rev      BIGINT                      NOT NULL,
+    revtype SMALLINT                    NOT NULL,
     active        BOOLEAN                     NOT NULL DEFAULT TRUE,
     created       TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
     updated       TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
@@ -54,17 +54,17 @@ CREATE TABLE person_history.users_history
     last_name     VARCHAR(64)                 NOT NULL,
     address_id    UUID                        NOT NULL,
 
-    CONSTRAINT pk_users_history PRIMARY KEY (id, revision),
-    CONSTRAINT fk_users_history_rev FOREIGN KEY (revision) REFERENCES person_history.revinfo (rev)
+    CONSTRAINT pk_users_aud PRIMARY KEY (id, rev),
+    CONSTRAINT fk_users_aud_rev FOREIGN KEY (rev) REFERENCES person_aud.revinfo (rev)
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_history_revision ON person_history.users_history (revision);
+CREATE INDEX IF NOT EXISTS idx_users_aud_rev ON person_aud.users_aud (rev);
 
-CREATE TABLE person_history.individuals_history
+CREATE TABLE person_aud.individuals_aud
 (
     id              UUID                        NOT NULL,
-    revision        BIGINT                      NOT NULL,
-    revision_type   SMALLINT                    NOT NULL,
+    rev        BIGINT                      NOT NULL,
+    revtype   SMALLINT                    NOT NULL,
     active          BOOLEAN                     NOT NULL DEFAULT TRUE,
     created         TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
     updated         TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
@@ -72,8 +72,8 @@ CREATE TABLE person_history.individuals_history
     phone_number    VARCHAR(64)                 NOT NULL,
     user_id         UUID                        NOT NULL,
 
-    CONSTRAINT pk_individuals_history PRIMARY KEY (id, revision),
-    CONSTRAINT fk_individuals_history_rev FOREIGN KEY (revision) REFERENCES person_history.revinfo (rev)
+    CONSTRAINT pk_individuals_aud PRIMARY KEY (id, rev),
+    CONSTRAINT fk_individuals_aud_rev FOREIGN KEY (rev) REFERENCES person_aud.revinfo (rev)
 );
 
-CREATE INDEX IF NOT EXISTS idx_individuals_history_revision ON person_history.individuals_history (revision);
+CREATE INDEX IF NOT EXISTS idx_individuals_aud_rev ON person_aud.individuals_aud (rev);

@@ -31,6 +31,6 @@ public class BaseEntity {
 
     @NotNull
     @ColumnDefault("(now) AT TIME ZONE 'utc'::text")
-    @Column(name = "update", nullable = false)
+    @Column(name = "updated", nullable = false)
     private Instant updated;
 }

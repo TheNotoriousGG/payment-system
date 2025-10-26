@@ -7,7 +7,7 @@ import org.hibernate.envers.RevisionTimestamp;
 
 @Entity
 @RevisionEntity
-@Table(name = "revinfo", schema = "person_hostory")
+@Table(name = "revinfo", schema = "person_aud")
 public class BaseEnversUtilEntity {
 
     @Id
