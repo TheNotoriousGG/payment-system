@@ -153,6 +153,9 @@ components:
         address,
       ]
       properties:
+        email:
+          type: string
+          format: email
         firstName:
           type: string
         lastName:
@@ -186,6 +189,7 @@ components:
         passport_number,
         phone_number,
         address,
+        active
       ]
       properties:
         firstName:
@@ -203,6 +207,8 @@ components:
           type: string
         address:
           $ref: '#/components/schemas/AddressDto'
+        active:
+          type: boolean
 
     AddressDto:
       type: object

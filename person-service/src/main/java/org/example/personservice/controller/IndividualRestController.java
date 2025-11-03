@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-public class IndividualRestControllerV1 implements PersonServiceApi {
+public class IndividualRestController implements PersonServiceApi {
 
     private final IndividualService individualService;
 

@@ -39,6 +39,7 @@ class IndividualServiceTest {
         // given
         UUID expectedId = UUID.randomUUID();
         IndividualWriteDto individualWriteDto = new IndividualWriteDto(
+                "test@example.com",
                 "Gennadiy",
                 "Parovozov",
                 "010101",
@@ -201,6 +202,7 @@ class IndividualServiceTest {
         // given
         UUID id = UUID.randomUUID();
         IndividualWriteDto writeDto = new IndividualWriteDto(
+                "test@example.com",
                 "Updated",
                 "Person",
                 "999999",
@@ -232,6 +234,7 @@ class IndividualServiceTest {
         // given
         UUID id = UUID.randomUUID();
         IndividualWriteDto writeDto = new IndividualWriteDto(
+                "test@example.com",
                 "Updated",
                 "Person",
                 "999999",

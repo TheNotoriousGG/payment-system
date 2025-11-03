@@ -10,7 +10,7 @@ import org.hibernate.envers.RelationTargetAuditMode;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+@Audited(targetAuditMode = RelationTargetAuditMode.AUDITED)
 @AuditTable(schema = "person_aud", value = "individuals_aud")
 @Setter
 @Getter

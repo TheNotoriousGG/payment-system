@@ -64,15 +64,23 @@ infra-stop:
 
 rebuild: clean all
 
+test-person-service:
+	cd person-service && ./gradlew test --tests IndividualRestControllerV1IT
+
+test-person-service-all:
+	cd person-service && ./gradlew test
+
 help:
 	@echo "Available commands:"
-	@echo "  make all           - Build everything and start all services"
-	@echo "  make up            - Start Nexus and wait for it to be ready"
-	@echo "  make start         - Start all services"
-	@echo "  make stop          - Stop all services"
-	@echo "  make clean         - Stop and remove containers and volumes"
-	@echo "  make logs          - Show logs from all services"
-	@echo "  make infra         - Start only infrastructure services"
-	@echo "  make infra-logs    - Show logs from infrastructure services"
-	@echo "  make infra-stop    - Stop infrastructure services"
-	@echo "  make rebuild       - Clean and rebuild everything"
+	@echo "  make all                    - Build everything and start all services"
+	@echo "  make up                     - Start Nexus and wait for it to be ready"
+	@echo "  make start                  - Start all services"
+	@echo "  make stop                   - Stop all services"
+	@echo "  make clean                  - Stop and remove containers and volumes"
+	@echo "  make logs                   - Show logs from all services"
+	@echo "  make infra                  - Start only infrastructure services"
+	@echo "  make infra-logs             - Show logs from infrastructure services"
+	@echo "  make infra-stop             - Stop infrastructure services"
+	@echo "  make test-person-service    - Run integration tests for person-service"
+	@echo "  make test-person-service-all - Run all tests for person-service"
+	@echo "  make rebuild                - Clean and rebuild everything"
