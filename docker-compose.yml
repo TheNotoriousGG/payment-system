@@ -97,6 +97,7 @@ services:
       NEXUS_SECURITY_RANDOMPASSWORD: false
     volumes:
       - nexus-data:/nexus-data
+      - ./infra/nexus/disable-anonymous-access.groovy:/opt/sonatype/nexus/provisioning/disable-anonymous-access.groovy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/service/rest/v1/status"]
       interval: 10s
@@ -108,8 +109,9 @@ services:
   individuals-api:
     build:
       context: ./individuals-api
+      network: host
       args:
-        NEXUS_URL: http://nexus:8082/repository/maven-snapshots
+        NEXUS_URL: http://localhost:8082/repository/maven-snapshots
         NEXUS_USERNAME: admin
         NEXUS_PASSWORD: admin
     container_name: individuals-api
@@ -118,6 +120,8 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
+      nexus:
+        condition: service_healthy
       keycloak:
         condition: service_healthy
     healthcheck:
@@ -131,8 +135,9 @@ services:
   person-service:
     build: 
       context: ./person-service
+      network: host
       args:
-        NEXUS_URL: http://nexus:8082/repository/maven-snapshots
+        NEXUS_URL: http://localhost:8082/repository/maven-snapshots
         NEXUS_USERNAME: admin
         NEXUS_PASSWORD: admin
     container_name: person-service
@@ -144,6 +149,8 @@ services:
       PERSON_SERVICE_DB_USERNAME: postgres
       PERSON_SERVICE_DB_PASSWORD: postgres
     depends_on:
+      nexus:
+        condition: service_healthy
       person-postgres:
         condition: service_healthy
     healthcheck:

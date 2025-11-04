@@ -138,6 +138,11 @@ tasks.named("compileJava") {
     dependsOn("generateApi")
 }
 
+tasks.named("build") {
+    finalizedBy("generateSdkJar")
+}
+
+
 /*
 ──────────────────────────────────────────────────────
 ============== Building jars ==============
