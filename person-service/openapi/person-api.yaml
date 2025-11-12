@@ -146,6 +146,7 @@ components:
       type: object
       required: [
         email,
+        password,
         firstName,
         lastName,
         passport_number,
@@ -156,6 +157,9 @@ components:
         email:
           type: string
           format: email
+        password:
+          type: string
+          format: string
         firstName:
           type: string
         lastName:

@@ -62,13 +62,18 @@ build-services: build-person-service build-individuals-api ## Build all applicat
 
 build-person-service: ## Build person-service Docker image
 	@echo "$(BLUE)→ Building person-service...$(NC)"
-	@$(DOCKER_COMPOSE) build person-service --no-cache
+	@$(DOCKER_COMPOSE) build person-service
 	@echo "$(GREEN)✓ person-service built successfully$(NC)"
 
 build-individuals-api: ## Build individuals-api Docker image
 	@echo "$(BLUE)→ Building individuals-api...$(NC)"
-	@$(DOCKER_COMPOSE) build individuals-api --no-cache
+	@$(DOCKER_COMPOSE) build individuals-api
 	@echo "$(GREEN)✓ individuals-api built successfully$(NC)"
+
+rebuild-services: ## Force rebuild all services (no cache)
+	@echo "$(BLUE)→ Force rebuilding all services (no cache)...$(NC)"
+	@$(DOCKER_COMPOSE) build --no-cache $(APP_SERVICES)
+	@echo "$(GREEN)✓ Services force rebuilt successfully$(NC)"
 
 start-apps: ## Start application services
 	@echo "$(BLUE)→ Starting application services...$(NC)"
@@ -93,7 +98,8 @@ status: ## Show status of all services
 	@echo "$(BLUE)════════════════════════════════════════════════════════════════$(NC)"
 	@echo "$(GREEN)Service Status$(NC)"
 	@echo "$(BLUE)════════════════════════════════════════════════════════════════$(NC)"
-	@$(DOCKER_COMPOSE) ps
+	@$(DOCKER_COMPOSE) ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+
 
 ##@ Logging
 
@@ -139,7 +145,7 @@ deep-clean: clean ## Deep clean: remove containers, volumes, and build artifacts
 	@docker volume ls -qf dangling=true | xargs -r docker volume rm 2>/dev/null || true
 	@echo "$(GREEN)✓ Deep cleanup completed$(NC)"
 
-rebuild: clean all ## Clean and rebuild everything
+rebuild: clean infra rebuild-services start-apps ## Clean and force rebuild everything
 
 ##@ Quick Access URLs
 

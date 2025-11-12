@@ -44,6 +44,7 @@ class IndividualServiceTest {
                 "Parovozov",
                 "010101",
                 "9379992",
+                "9379992",
                 new AddressWriteDto()
         );
 
@@ -207,6 +208,7 @@ class IndividualServiceTest {
                 "Person",
                 "999999",
                 "8888888",
+                "9379992",
                 new AddressWriteDto()
         );
 
@@ -239,6 +241,7 @@ class IndividualServiceTest {
                 "Person",
                 "999999",
                 "8888888",
+                "9379992",
                 new AddressWriteDto()
         );
 

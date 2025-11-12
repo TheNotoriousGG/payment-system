@@ -2,6 +2,9 @@ package org.example.individualsapi.mapper;
 
 import org.example.individualsapi.model.KeycloakUserResponse;
 import org.example.individualsapi.model.dto.UserInfoResponse;
+import org.example.individualsapi.model.dto.UserRegistrationRequest;
+import org.example.personapi.dto.IndividualWriteDto;
+import org.example.personapi.dto.IndividualWriteResponseDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -26,4 +29,8 @@ public interface UserMapper {
         }
         return Instant.ofEpochMilli(timestamp).atOffset(ZoneOffset.UTC);
     }
+
+    IndividualWriteDto toIndividualWriteDto(UserRegistrationRequest request);
+
+    Object from(IndividualWriteResponseDto individualWriteResponseDto);
 }

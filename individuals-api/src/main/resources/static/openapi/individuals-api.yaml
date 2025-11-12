@@ -117,18 +117,48 @@ components:
   schemas:
     UserRegistrationRequest:
       type: object
-      required: [email, password, confirm_password]
+      required: [
+        email,
+        password,
+        confirmPassword,
+        firstName,
+        lastName,
+        passport_number,
+        phone_number,
+        address,
+      ]
       properties:
         email:
           type: string
           format: email
         password:
           type: string
-          minimum: 3
-          maximum: 20
-        confirm_password:
-          minimum: 3
-          maximum: 20
+          format: string
+        confirmPassword:
+          type: string
+          format: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        passport_number:
+          type: string
+        phone_number:
+          type: string
+        address:
+          $ref: '#/components/schemas/UserAddressDto'
+
+    UserAddressDto:
+      type: object
+      required: [ ]
+      properties:
+        address:
+          type: string
+        zip_code:
+          type: string
+        city:
+          type: string
+        country_code:
           type: string
 
     UserLoginRequest:

@@ -7,7 +7,6 @@ import org.example.individualsapi.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
@@ -25,7 +24,7 @@ public class AuthApiImpl implements AuthApi {
     @Override
     public Mono<ResponseEntity<TokenResponse>> authLoginPost(Mono<UserLoginRequest> userLoginRequest, ServerWebExchange exchange) {
         return userLoginRequest
-                .flatMap( request ->
+                .flatMap(request ->
                         userService.userLogin(request.getEmail(), request.getPassword())
                 ).map(ResponseEntity::ok);
     }
@@ -39,13 +38,13 @@ public class AuthApiImpl implements AuthApi {
     @Override
     public Mono<ResponseEntity<TokenResponse>> authRefreshTokenPost(Mono<TokenRefreshRequest> tokenRefreshRequest, ServerWebExchange exchange) {
         return tokenRefreshRequest
-                .flatMap( request ->
+                .flatMap(request ->
                         userService.refreshToken(request.getRefreshToken())
                 ).map(ResponseEntity::ok);
     }
 
     @Override
-    public Mono<ResponseEntity<TokenResponse>> authRegistrationPost(@RequestBody Mono<UserRegistrationRequest> userRegistrationRequest, ServerWebExchange exchange) {
+    public Mono<ResponseEntity<TokenResponse>> authRegistrationPost(Mono<UserRegistrationRequest> userRegistrationRequest, ServerWebExchange exchange) {
         return userRegistrationRequest
                 .flatMap(request ->
                         userService.userRegistration(Mono.just(request))

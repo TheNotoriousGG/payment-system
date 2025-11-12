@@ -25,11 +25,16 @@ repositories {
 }
 
 dependencies {
+    implementation(platform(libs.opentelemetry.instrumentation.bom))
+    implementation(platform(libs.spring.cloud.bom))
+    
     implementation(libs.bundles.springBootWeb)
     implementation(libs.bundles.springSecurity)
     implementation(libs.bundles.openApi)
     implementation(libs.bundles.micrometer)
     implementation(libs.bundles.mapstructBundle)
+    implementation(libs.spring.cloud.openfeign)
+    implementation(libs.person.api.sdk)
 
     compileOnly(libs.bundles.compileOnlyLibs)
 

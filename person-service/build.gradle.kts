@@ -1,4 +1,10 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import java.net.URI
+import java.net.URL
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Duration
 
 val versions = mapOf(
     "mapstructVersion" to "1.5.5.Final",
@@ -27,7 +33,7 @@ plugins {
 }
 
 group = "org.example"
-version = "1.0.0-SNAPSHOT"
+version = "1.0.0"
 description = "Persons domain service"
 
 java {
@@ -201,22 +207,30 @@ publishing {
     publications {
         var jarFile = file("build/libs")
             .listFiles()
-            ?.firstOrNull { it.name.contains(personApiSdkArtifactName) && (it.extension == "jar" || it.extension == "zip") }
+            ?.firstOrNull { it.name.contains(personApiSdkArtifactName) && (it.extension == "jar") }
 
-        if (jarFile != null) {
+        val nexusArtifactName = "$nexusUrl/${project.group}/$personApiSdkArtifactName/${project.version}/$personApiSdkArtifactName-${project.version}.jar"
+
+        logger.lifecycle("Creating artifact: $nexusArtifactName")
+
+        if (jarFile != null && !artifactExistsInNexus(nexusArtifactName)) {
             logger.lifecycle("publishing: ${jarFile.name}")
 
             create<MavenPublication>("publish${name.replaceFirstChar(Char::uppercase)}Jar") {
                 artifact(jarFile)
+
                 groupId = "${project.group}"
                 artifactId = personApiSdkArtifactName
-                version = "1.0.0-SNAPSHOT"
+                version = "${project.version}"
 
                 pom {
                     this.name.set("Generated API $personApiSdkArtifactName")
                     this.description.set("OpenAPI generated code for $personApiSdkArtifactName")
                 }
             }
+        }
+        else {
+            logger.lifecycle("Artefact {} already exists in nexus", nexusArtifactName)
         }
     }
 
@@ -232,4 +246,26 @@ publishing {
             }
         }
     }
+
+}
+
+fun artifactExistsInNexus(artifactUrl: String): Boolean {
+
+        val httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(2))
+            .build();
+
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create(artifactUrl))
+            .method("HEAD", HttpRequest.BodyPublishers.noBody())
+            .timeout(Duration.ofSeconds(3))
+            .build()
+
+        return try {
+            val response = httpClient.send(request, HttpResponse.BodyHandlers.discarding())
+            response.statusCode() != 200
+        } catch (e: Exception) {
+            logger.error(e.message)
+            return false
+        }
 }

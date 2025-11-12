@@ -7,7 +7,6 @@ import org.example.individualsapi.model.dto.TokenResponse;
 import org.example.individualsapi.model.dto.UserInfoResponse;
 import org.example.individualsapi.model.dto.UserRegistrationRequest;
 import org.example.individualsapi.util.AuthContextUtil;
-import org.example.individualsapi.util.RequestValidator;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -21,18 +20,32 @@ public class UserService {
     private final TokenService tokenService;
     private final UserMapper userMapper;
     private final KeycloakClient keycloakClient;
+    private final PersonService personService;
 
-    public Mono<TokenResponse> userRegistration(Mono<UserRegistrationRequest> userRegistrationRequest) {
-        return userRegistrationRequest
-                .flatMap(RequestValidator::validateUserRegistrationRequest)
-                .flatMap(request ->
-                        tokenService.getServiceToken()
-                                .flatMap(
-                                        serviceToken ->
-                                                keycloakClient.addNewKeycloakUser(request.getEmail(), request.getPassword(), serviceToken)
-                                ).then(tokenService.getUserToken(
-                                        usernameFromEmail(request.getEmail()), request.getPassword())
-                                ));
+    public Mono<TokenResponse> userRegistration(Mono<UserRegistrationRequest> userRegistrationRequestMono) {
+        return userRegistrationRequestMono
+                .map(userMapper::toIndividualWriteDto)
+                .flatMap(body ->
+                        personService.register(body)
+                                .flatMap(individualWriteResponseDto ->
+                                        tokenService.getServiceToken()
+                                                .flatMap(serviceToken ->
+                                                        keycloakClient.addNewKeycloakUser(
+                                                                body.getEmail(),
+                                                                body.getPassword(),
+                                                                serviceToken
+                                                        )
+                                                )
+                                                .onErrorResume(err ->
+                                                        personService.compensateRegistration(individualWriteResponseDto.getId())
+                                                                .then(Mono.error(err))
+                                                )
+                                                .thenReturn(body)
+                                )
+                )
+                .flatMap(dto ->
+                        tokenService.getUserToken(dto.getEmail(), dto.getPassword())
+                );
     }
 
     public Mono<TokenResponse> userLogin(String email, String password) {
