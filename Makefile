@@ -2,7 +2,7 @@
 
 DOCKER_COMPOSE = docker compose
 
-NEXUS_URL = http://localhost:8082
+NEXUS_URL = http://localhost:8077
 KEYCLOAK_URL = http://localhost:9000
 
 INFRA_SERVICES = nexus keycloak person-postgres prometheus grafana tempo loki alloy
