@@ -12,7 +12,7 @@ testcontainers-keycloak-version = "3.4.0"
 assertj-version = "3.11.1"
 jackson-databind-nullable-version = "0.2.6"
 opentelemetry-instrumentation-bom-version = "2.15.0"
-person-api-sdk-version = "1.0.0-20251104.153357-6"
+person-api-sdk-version = "1.0.0"
 
 [plugins]
 springBoot = { id = "org.springframework.boot", version.ref = "spring-boot-version" }
