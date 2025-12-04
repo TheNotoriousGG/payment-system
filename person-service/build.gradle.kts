@@ -5,6 +5,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.util.Base64
 
 val versions = mapOf(
     "mapstructVersion" to "1.5.5.Final",
@@ -33,7 +34,7 @@ plugins {
 }
 
 group = "org.example"
-version = "1.0.0"
+version = "1.0.1"
 description = "Persons domain service"
 
 java {
@@ -115,7 +116,7 @@ val buildDirPath: String = layout.buildDirectory.get().asFile.path
 val outputDirPath: String = "${buildDirPath}/generated/openapi"
 val genSrcDirPath: String = "${outputDirPath}/src/main/java"
 
-tasks.register<GenerateTask>("generateApi") {
+tasks.register<GenerateTask>("generatePersonApi") {
     generatorName.set("spring")
     inputSpec.set("$rootDir/openapi/person-api.yaml")
     outputDir.set(outputDirPath)
@@ -140,15 +141,6 @@ sourceSets {
     }
 }
 
-tasks.named("compileJava") {
-    dependsOn("generateApi")
-}
-
-tasks.named("build") {
-    finalizedBy("generateSdkJar")
-}
-
-
 /*
 ──────────────────────────────────────────────────────
 ============== Building jars ==============
@@ -165,9 +157,9 @@ val generatedSourceSet = sourceSets.create("generated") {
 tasks.register<Jar>("generateSdkJar") {
     group = "build"
     archiveBaseName.set(personApiSdkArtifactName)
+    archiveVersion.set(project.version.toString())
     destinationDirectory.set(layout.buildDirectory.dir("libs"))
     from(generatedSourceSet.output)
-    dependsOn("generateApi")
 }
 
 /*
@@ -186,10 +178,6 @@ val nexusUrl = System.getenv("NEXUS_URL") ?: System.getProperty("NEXUS_URL")
 val nexusUser = System.getenv("NEXUS_USERNAME") ?: System.getProperty("NEXUS_USERNAME")
 val nexusPassword = System.getenv("NEXUS_PASSWORD") ?: System.getProperty("NEXUS_PASSWORD")
 
-logger.lifecycle("Gradle nexusUrl = ${nexusUrl}")
-logger.lifecycle("Gradle nexusUser = ${nexusUser}")
-logger.lifecycle("Gradle nexusPassword = ${nexusPassword}")
-
 if (nexusUrl.isNullOrBlank() || nexusUser.isNullOrBlank() || nexusPassword.isNullOrBlank()) {
     throw GradleException(
         "NEXUS details are not set. Create a .env file with correct properties: " +
@@ -205,35 +193,18 @@ if (nexusUrl.isNullOrBlank() || nexusUser.isNullOrBlank() || nexusPassword.isNul
 
 publishing {
     publications {
-        var jarFile = file("build/libs")
-            .listFiles()
-            ?.firstOrNull { it.name.contains(personApiSdkArtifactName) && (it.extension == "jar") }
+        create<MavenPublication>("sdkJar") {
+            artifact(file("build/libs/$personApiSdkArtifactName-${project.version}.jar"))
+            groupId = "${project.group}"
+            artifactId = personApiSdkArtifactName
+            version = "${project.version}"
 
-        val nexusArtifactName = "$nexusUrl/${project.group}/$personApiSdkArtifactName/${project.version}/$personApiSdkArtifactName-${project.version}.jar"
-
-        logger.lifecycle("Creating artifact: $nexusArtifactName")
-
-        if (jarFile != null && !artifactExistsInNexus(nexusArtifactName)) {
-            logger.lifecycle("publishing: ${jarFile.name}")
-
-            create<MavenPublication>("publish${name.replaceFirstChar(Char::uppercase)}Jar") {
-                artifact(jarFile)
-
-                groupId = "${project.group}"
-                artifactId = personApiSdkArtifactName
-                version = "${project.version}"
-
-                pom {
-                    this.name.set("Generated API $personApiSdkArtifactName")
-                    this.description.set("OpenAPI generated code for $personApiSdkArtifactName")
-                }
+            pom {
+                name.set("Generated API $personApiSdkArtifactName")
+                description.set("OpenAPI generated code for $personApiSdkArtifactName")
             }
         }
-        else {
-            logger.lifecycle("Artefact {} already exists in nexus", nexusArtifactName)
-        }
     }
-
 
     repositories {
         maven {
@@ -246,26 +217,42 @@ publishing {
             }
         }
     }
-
 }
 
-fun artifactExistsInNexus(artifactUrl: String): Boolean {
+tasks.named("compileJava") {
+    dependsOn("generatePersonApi")
+}
 
-        val httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(2))
-            .build();
+tasks.named("build") {
+    finalizedBy("generateSdkJar")
+}
 
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(artifactUrl))
-            .method("HEAD", HttpRequest.BodyPublishers.noBody())
-            .timeout(Duration.ofSeconds(3))
-            .build()
+tasks.named<Jar>("jar") {
+    archiveClassifier.set("")
+}
 
-        return try {
-            val response = httpClient.send(request, HttpResponse.BodyHandlers.discarding())
-            response.statusCode() != 200
-        } catch (e: Exception) {
-            logger.error(e.message)
-            return false
-        }
+tasks.withType<PublishToMavenRepository>().configureEach {
+    onlyIf {
+        val groupPath = project.group.toString().replace('.', '/')
+        val artifactUrl = "$nexusUrl/$groupPath/$personApiSdkArtifactName/${project.version}/$personApiSdkArtifactName-${project.version}.jar"
+        !isArtifactInNexus(artifactUrl)
+    }
+}
+
+fun isArtifactInNexus(url: String): Boolean {
+    val credentials = Base64.getEncoder().encodeToString("$nexusUser:$nexusPassword".toByteArray())
+    
+    val request = HttpRequest.newBuilder()
+        .uri(URI.create(url))
+        .header("Authorization", "Basic $credentials")
+        .method("HEAD", HttpRequest.BodyPublishers.noBody())
+        .timeout(Duration.ofSeconds(5))
+        .build()
+
+    return try {
+        HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.discarding()).statusCode() == 200
+    } catch (e: Exception) {
+        logger.lifecycle(e.message)
+        false
+    }
 }
