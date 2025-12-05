@@ -1,0 +1,8 @@
+build/
+.gradle/
+bin/
+.git/
+.gitignore
+README.md
+*.md
+

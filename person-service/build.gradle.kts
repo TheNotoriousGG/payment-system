@@ -43,6 +43,10 @@ java {
     }
 }
 
+tasks.named<Jar>("jar") {
+    enabled = false
+}
+
 repositories {
     mavenCentral()
 }
